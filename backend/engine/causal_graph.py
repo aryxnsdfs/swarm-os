@@ -107,7 +107,7 @@ class CausalGraphEngine:
     def generate_rca(self) -> str:
         """
         Generate a Root Cause Analysis document from the causal chain.
-        Returns a formatted Markdown string with a clean table layout.
+        Returns a formatted Markdown string with clean table layouts.
         """
         chain = self.get_chain()
         if not chain:
@@ -126,30 +126,47 @@ class CausalGraphEngine:
             t = re.sub(r"\s+", " ", t.replace("\n", " ")).strip()
             if "import torch" in t or "def " in t or "class " in t:
                 t = "Executable remediation content recorded."
-            return t
+            return t[:120]
 
-        rca = "# Auto-Generated Root Cause Analysis\n"
+        rca = "# Auto-Generated Root Cause Analysis\n\n"
 
         if root_cause:
-            rca += f"\n## Root Cause\n- **{root_cause['label']}**: {clean_detail(root_cause['detail'])}\n\n"
+            rca += "## Root Cause\n\n"
+            rca += "| Field | Detail |\n"
+            rca += "|---|---|\n"
+            rca += f"| **Trigger** | {root_cause['label']} |\n"
+            rca += f"| **Detail** | {clean_detail(root_cause['detail'])} |\n"
+            rca += f"| **Type** | `{root_cause['type']}` |\n\n"
 
-        rca += "## Causal Chain\n"
+        rca += "## Causal Chain\n\n"
+        rca += "| Step | Event | Type | Detail |\n"
+        rca += "|---|---|---|---|\n"
         for i, node in enumerate(chain):
-            rca += f"{i+1}. **{node['label']}** (`{node['type']}`): {clean_detail(node['detail'])}\n"
+            rca += f"| {i+1} | {node['label']} | `{node['type']}` | {clean_detail(node['detail'])} |\n"
+        rca += "\n"
 
         if fixes:
-            rca += "\n## Fixes Applied\n"
+            rca += "## Fixes Applied\n\n"
+            rca += "| Fix | Detail |\n"
+            rca += "|---|---|\n"
             for fix in fixes:
-                rca += f"- **{fix['label']}**: {clean_detail(fix['detail'])}\n"
+                rca += f"| {fix['label']} | {clean_detail(fix['detail'])} |\n"
+            rca += "\n"
 
         if escalations:
-            rca += "\n## Escalations\n"
+            rca += "## Escalations\n\n"
+            rca += "| Event | Detail |\n"
+            rca += "|---|---|\n"
             for esc in escalations:
-                rca += f"- **{esc['label']}**: {clean_detail(esc['detail'])}\n"
+                rca += f"| {esc['label']} | {clean_detail(esc['detail'])} |\n"
+            rca += "\n"
 
         if resolutions:
-            rca += "\n## Resolution\n"
+            rca += "## Resolution\n\n"
+            rca += "| Outcome | Detail |\n"
+            rca += "|---|---|\n"
             for res in resolutions:
-                rca += f"- **{res['label']}**: {clean_detail(res['detail'])}\n"
+                rca += f"| {res['label']} | {clean_detail(res['detail'])} |\n"
+            rca += "\n"
 
         return rca

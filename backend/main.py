@@ -52,7 +52,6 @@ from inference import (
     log_start,
     log_step,
     print_runtime_banner,
-    select_task_id,
 )
 from swarm_openenv_env.environment import IncidentResponseEnv
 from swarm_openenv_env.tasks import get_task
@@ -1268,28 +1267,80 @@ def _openenv_node_label(step_no: int, action, observation) -> str:
     return f"Step {step_no}"
 
 
+async def _run_all_openenv_tasks(
+    *,
+    prompt: str,
+    task_ids: list[str],
+    clients,
+):
+    """Run all OpenEnv tasks (easy, medium, hard) sequentially."""
+    for idx, task_id in enumerate(task_ids):
+        task = get_task(task_id)
+        mission_prompt = effective_prompt_for_task(task_id, "")
+        validator_preview = _preview_validator_runtime(task_id)
+        incident_type = (
+            "schema" if "schema" in task_id
+            else "canary" if "canary" in task_id
+            else "oom"
+        )
+        commander_payload = {
+            "task_id": task_id,
+            "title": task.title,
+            "objective": task.objective,
+            "incident_type": incident_type,
+            "validator_runtime": validator_preview,
+            "provider": detect_provider() or "none",
+            "provider_chain": available_provider_names(),
+            "model": MODEL_NAME,
+        }
+        logger.info("═══ Running task %d/%d: %s (%s) ═══", idx + 1, len(task_ids), task_id, task.title)
+        await broadcast({
+            "type": "chat",
+            "payload": {
+                "agent": "COMMANDER",
+                "m2m": f"TASK_START | {idx + 1}/{len(task_ids)} | {task_id}",
+                "think": f"Starting task {idx + 1} of {len(task_ids)}: {task.title} (difficulty: {getattr(task, 'difficulty', 'unknown')})",
+            },
+        })
+        is_last = (idx == len(task_ids) - 1)
+        await _run_openenv_frontend_scenario(
+            prompt=mission_prompt,
+            resolved_task_id=task_id,
+            mission_prompt=mission_prompt,
+            commander_payload=commander_payload,
+            skip_reset=(idx > 0),
+            is_final_task=is_last,
+        )
+        if not is_last:
+            await asyncio.sleep(2.0)
+
+
 async def _run_openenv_frontend_scenario(
     *,
     prompt: str,
     resolved_task_id: str,
     mission_prompt: str,
     commander_payload: dict[str, Any],
+    skip_reset: bool = False,
+    is_final_task: bool = True,
 ):
     global scenario_task
     env = IncidentResponseEnv(default_task_id=resolved_task_id)
     task = get_task(resolved_task_id)
     history: list[str] = []
     previous_sandbox_status: Optional[str] = None
-    parent_node = "root_incident"
+    root_node_id = f"root_{resolved_task_id}"
+    parent_node = root_node_id
     scenario_id = _task_to_scenario_id(resolved_task_id)
 
     try:
-        physics_engine.reset()
-        causal_engine.reset()
-        orchestrator.reset()
-        reward_calculator.reset()
-        _reset_frontend_replay_buffer()
-        await _stop_telemetry_loop()
+        if not skip_reset:
+            physics_engine.reset()
+            causal_engine.reset()
+            orchestrator.reset()
+            reward_calculator.reset()
+            _reset_frontend_replay_buffer()
+            await _stop_telemetry_loop()
 
         observation = env.reset(task_id=resolved_task_id, prompt=mission_prompt)
         _sync_physics_from_openenv(observation)
@@ -1313,7 +1364,7 @@ async def _run_openenv_frontend_scenario(
         await broadcast({"type": "telemetry", "payload": _build_openenv_telemetry_payload(observation)})
         await broadcast({"type": "preflight", "payload": _build_openenv_preflight_payload(observation)})
         await _record_causal_event(
-            "root_incident",
+            root_node_id,
             task.title,
             "error",
             task.incident_summary,
@@ -1403,7 +1454,7 @@ async def _run_openenv_frontend_scenario(
                 agent=observation.active_agent,
             )
 
-            step_node = f"openenv_step_{step_index + 1}"
+            step_node = f"{resolved_task_id}_step_{step_index + 1}"
             await _record_causal_event(
                 step_node,
                 _openenv_node_label(step_index + 1, action, observation),
@@ -1453,6 +1504,7 @@ async def _run_openenv_frontend_scenario(
             openenv_task=task,
             openenv_steps=step_index + 1,
             openenv_success=final_success,
+            is_final_task=is_final_task,
         )
     except asyncio.CancelledError:
         logger.info("OpenEnv orchestration task cancelled for task=%s", resolved_task_id)
@@ -1659,21 +1711,22 @@ async def orchestrate_scenario(req: OrchestrateRequest):
                 ),
             }
 
-        resolved_task_id = select_task_id(clients, prompt) or "task_easy_gpu_oom"
-        task = get_task(resolved_task_id)
-        mission_prompt = effective_prompt_for_task(resolved_task_id, prompt)
-        validator_preview = _preview_validator_runtime(resolved_task_id)
+        all_task_ids = [
+            "task_easy_gpu_oom",
+            "task_medium_schema_drift",
+            "task_hard_canary_regression",
+        ]
+        await broadcast({"type": "tasks_queued", "payload": {"task_ids": all_task_ids}})
+
+        first_task_id = all_task_ids[0]
+        first_task = get_task(first_task_id)
+        first_mission = effective_prompt_for_task(first_task_id, prompt)
+        validator_preview = _preview_validator_runtime(first_task_id)
         commander_payload = {
-            "task_id": resolved_task_id,
-            "title": task.title,
-            "objective": task.objective,
-            "incident_type": (
-                "schema"
-                if "schema" in resolved_task_id
-                else "canary"
-                if "canary" in resolved_task_id
-                else "oom"
-            ),
+            "task_id": first_task_id,
+            "title": first_task.title,
+            "objective": first_task.objective,
+            "incident_type": "oom",
             "validator_runtime": validator_preview,
             "provider": detect_provider() or "none",
             "provider_chain": available_provider_names(),
@@ -1684,11 +1737,10 @@ async def orchestrate_scenario(req: OrchestrateRequest):
         await _stop_training_loop()
         global scenario_task
         scenario_task = asyncio.create_task(
-            _run_openenv_frontend_scenario(
+            _run_all_openenv_tasks(
                 prompt=prompt,
-                resolved_task_id=resolved_task_id,
-                mission_prompt=mission_prompt,
-                commander_payload=commander_payload,
+                task_ids=all_task_ids,
+                clients=clients,
             )
         )
         return {"status": "orchestrated", "mode": "openenv", "commander_payload": commander_payload}
@@ -2456,32 +2508,54 @@ def _build_openenv_rca(task, observation, success: bool, steps_taken: int) -> st
     sandbox = observation.sandbox_result or {}
     checklist = observation.pending_checklist or []
     logs = observation.execution_logs or []
-    bullet_logs = "\n".join(f"- {line}" for line in logs[-8:]) or "- No execution logs captured."
     findings = observation.artifact_content or {}
-    finding_lines = "\n".join(
-        f"- **{artifact}**: {str(detail).strip()[:200]}"
-        for artifact, detail in findings.items()
-    ) or "- Evidence details are still being collected."
     checks_applied = ", ".join(sandbox.get("checks_applied") or ["validator execution"])
     validator_line = sandbox.get("validator_detail") or "Validator details were not captured."
-    outcome_line = "resolved successfully" if success else "ended incomplete and still requires follow-up"
-    open_risks = "\n".join(f"- {item}" for item in checklist) or "- No pending checklist items remained at closure."
-    return (
-        f"# Auto-Generated Root Cause Analysis\n"
-        f"## The Trigger\n"
-        f"The incident **{task.title}** {outcome_line}.\n"
-        f"Cost accrued: ${float(observation.cost_accrued_usd or 0.0):.3f} | Steps: {steps_taken}\n\n"
-        f"## The Causal Chain\n"
-        f"{finding_lines}\n\n"
-        f"**Execution Trace:**\n"
-        f"{bullet_logs}\n\n"
-        f"## The Validation Proof\n"
-        f"- Validator mode: {sandbox.get('validation_label') or (observation.validator_runtime or {}).get('label') or 'Unknown'}\n"
-        f"- Validator status: {sandbox.get('status') or 'Unknown'}\n"
-        f"- Checks applied: {checks_applied}\n"
-        f"- Validator detail: {validator_line}\n"
-        f"- Residual Risk: {open_risks}\n"
-    )
+    outcome_line = "Resolved" if success else "Incomplete"
+    cost = float(observation.cost_accrued_usd or 0.0)
+    validator_mode = sandbox.get("validation_label") or (observation.validator_runtime or {}).get("label") or "Unknown"
+    validator_status = sandbox.get("status") or "Unknown"
+
+    rca = "# Auto-Generated Root Cause Analysis\n\n"
+    rca += "## Incident Summary\n\n"
+    rca += "| Metric | Value |\n"
+    rca += "|---|---|\n"
+    rca += f"| **Incident** | {task.title} |\n"
+    rca += f"| **Outcome** | {outcome_line} |\n"
+    rca += f"| **Cost Accrued** | ${cost:.3f} |\n"
+    rca += f"| **Steps Taken** | {steps_taken} |\n\n"
+
+    if findings:
+        rca += "## Causal Chain\n\n"
+        rca += "| Artifact | Finding |\n"
+        rca += "|---|---|\n"
+        for artifact, detail in findings.items():
+            rca += f"| {artifact} | {str(detail).strip()[:150]} |\n"
+        rca += "\n"
+
+    if logs:
+        rca += "## Execution Trace\n\n"
+        rca += "| # | Log Entry |\n"
+        rca += "|---|---|\n"
+        for i, line in enumerate(logs[-8:], 1):
+            rca += f"| {i} | {str(line).strip()[:120]} |\n"
+        rca += "\n"
+
+    rca += "## Validation Proof\n\n"
+    rca += "| Check | Result |\n"
+    rca += "|---|---|\n"
+    rca += f"| **Validator Mode** | {validator_mode} |\n"
+    rca += f"| **Status** | {validator_status} |\n"
+    rca += f"| **Checks Applied** | {checks_applied} |\n"
+    rca += f"| **Validator Detail** | {validator_line[:120]} |\n"
+    if checklist:
+        for item in checklist:
+            rca += f"| **Residual Risk** | {item} |\n"
+    else:
+        rca += "| **Residual Risk** | None |\n"
+    rca += "\n"
+
+    return rca
 
 
 async def _finalize_orchestration(
@@ -2492,6 +2566,7 @@ async def _finalize_orchestration(
     openenv_task=None,
     openenv_steps: int = 0,
     openenv_success: bool = False,
+    is_final_task: bool = True,
 ):
     """
     Emit git commits, RCA report, counterfactual analysis, and scenario_complete
@@ -2554,13 +2629,16 @@ async def _finalize_orchestration(
     
     await asyncio.sleep(1.0)
     
-    # Signal scenario completion
-    await broadcast({"type": "scenario_complete", "payload": {
-        "scenario_id": scenario_id,
-        "commander_payload": commander_json
-    }})
-    await _stop_telemetry_loop()
-    logger.info("Scenario '%s' marked complete — frontend notified", scenario_id)
+    if is_final_task:
+        await broadcast({"type": "scenario_complete", "payload": {
+            "scenario_id": scenario_id,
+            "commander_payload": commander_json
+        }})
+        await _stop_telemetry_loop()
+        _reset_frontend_replay_buffer()
+        logger.info("Scenario '%s' marked complete — replay buffer cleared for clean refresh", scenario_id)
+    else:
+        logger.info("Scenario '%s' task finished — more tasks remain, not emitting scenario_complete", scenario_id)
 
 
 @app.post("/api/code/submit")

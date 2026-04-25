@@ -864,16 +864,61 @@ python inference.py
 
 ```
 swarm-os/
-├── openenv.yaml
-├── README.md
-├── train.py
-├── swarm_os_policy_curve.png
-├── swarm_os_reward_curve.png
-├── logs/
-│   ├── reward_log.jsonl
-│   └── training_summary.json
-└── final-model/
-    └── Llama-3.1-8B-Instruct.Q4_K_M.gguf
+├── openenv.yaml                          # OpenEnv manifest (tasks, rubric, config)
+├── inference.py                          # Core inference engine (prompt routing, LLM client, logging)
+├── README.md                             # This document
+├── BLOG.md                               # Hackathon blog post
+├── Dockerfile                            # Multi-stage Docker build for HF Space
+├── start.sh                              # HF Space entrypoint (model download + server launch)
+├── requirements.txt                      # Python dependencies
+├── pyproject.toml                        # Package metadata
+├── reward_log.jsonl                      # Per-step reward telemetry (295 steps)
+├── training_summary.json                 # Aggregate training statistics
+├── swarm_os_policy_curve.png             # KL Divergence training plot (Figure 1)
+├── swarm_os_reward_curve.png             # Mean Episode Reward plot (Figure 2)
+├── kaggle_training_notebook.py           # Full Kaggle training script with comments
+├── kaggle_visualize_training.py          # Training visualization script
+├── swarm_openenv_env/                    # OpenEnv environment package
+│   ├── environment.py                    # IncidentResponseEnv (Gymnasium API)
+│   ├── tasks.py                          # TaskSpec definitions (easy/medium/hard)
+│   ├── graders.py                        # IncidentTrajectoryRubric
+│   └── models.py                         # IncidentObservation, IncidentAction
+├── backend/                              # FastAPI backend
+│   ├── main.py                           # API endpoints, WebSocket, orchestration
+│   ├── model/
+│   │   ├── inference.py                  # LLM client wrapper
+│   │   └── config.py                     # Model configuration
+│   ├── engine/
+│   │   ├── physics.py                    # FinOps physics engine
+│   │   ├── evaluator.py                  # AST + Constitutional + Docker validators
+│   │   ├── docker_sandbox.py             # Docker GPU sandbox (double-lock memory)
+│   │   ├── causal_graph.py               # Causal DAG + RCA generator
+│   │   ├── rewards.py                    # Live reward calculator
+│   │   ├── counterfactual.py             # Dead timeline projection
+│   │   ├── schema_drift.py              # Schema drift incident logic
+│   │   └── tensor_challenges.py          # VRAM tensor challenges
+│   └── agents/
+│       └── orchestrator.py               # Multi-agent spawning and VRAM gating
+├── frontend/                             # React dashboard
+│   ├── src/
+│   │   ├── App.jsx                       # Main layout + Start Simulation overlay
+│   │   ├── store/simulationStore.jsx     # Zustand state management
+│   │   ├── hooks/useSimulation.js        # WebSocket + orchestration hook
+│   │   └── components/
+│   │       ├── Chat/EnterpriseChat.jsx   # Agent chat panel
+│   │       ├── CausalGraph/CausalDAG.jsx # Live causal DAG
+│   │       ├── GitPanel/GitRCAPanel.jsx  # Root Cause Analysis panel
+│   │       ├── Monitor/DockerPhysicsMonitor.jsx  # Telemetry panel
+│   │       ├── Training/RewardCurve.jsx  # Evaluator reward trace
+│   │       ├── Training/RewardMathFeed.jsx       # Real-time reward feed
+│   │       ├── Training/FinOpsPreFlightAudit.jsx # FinOps gatekeeper
+│   │       └── Counterfactual/DeadTimeline.jsx   # Dead timeline
+│   └── package.json
+├── server/
+│   └── app.py                            # OpenEnv MCP server
+└── dataset/
+    ├── prompt_generator.py               # 120-prompt adversarial curriculum
+    └── splits/                           # SFT, GRPO, DPO data splits
 ```
 
 ---
@@ -1136,18 +1181,29 @@ When `CODER_AGENT` proposes a remediation, the checklist briefly steps through e
 
 ```
 swarm-os/
-├── openenv.yaml
-├── environment/
-│   ├── server.py                        # OpenEnv MCP Server (SwarmOSEnvironment)
-│   ├── rubric.py                        # IncidentTrajectoryRubric
-│   ├── tasks/
-│   │   ├── task_easy_gpu_oom.py
-│   │   ├── task_medium_schema_drift.py
-│   │   └── task_hard_canary_regression.py
-│   └── validators/
-│       ├── docker_gpu_validator.py
-│       └── docker_plain_python_validator.py
-└── frontend/
+├── openenv.yaml                          # OpenEnv manifest (tasks, rubric, entry points)
+├── inference.py                          # Inference engine (prompt routing, LLM, logging)
+├── swarm_openenv_env/
+│   ├── __init__.py
+│   ├── environment.py                    # IncidentResponseEnv (Gymnasium reset/step/state)
+│   ├── tasks.py                          # TaskSpec: task_easy_gpu_oom, task_medium_schema_drift, task_hard_canary_regression
+│   ├── graders.py                        # IncidentTrajectoryRubric (composable reward function)
+│   └── models.py                         # IncidentObservation, IncidentAction dataclasses
+├── backend/
+│   ├── main.py                           # FastAPI + WebSocket orchestration
+│   ├── engine/
+│   │   ├── evaluator.py                  # AST Pre-Flight + Constitutional Check
+│   │   ├── docker_sandbox.py             # Docker GPU Sandbox (double-lock enforcement)
+│   │   ├── causal_graph.py               # Causal DAG engine + RCA table generator
+│   │   ├── physics.py                    # FinOps physics (cost, SLA, VRAM tracking)
+│   │   └── rewards.py                    # Live reward calculator
+│   └── agents/
+│       └── orchestrator.py               # Multi-agent spawn with VRAM gating
+├── server/
+│   └── app.py                            # OpenEnv MCP Server
+├── frontend/                             # React dashboard (built in Docker)
+├── Dockerfile                            # Multi-stage Docker build for HF Space
+└── start.sh                              # Space entrypoint (model download + llama.cpp + uvicorn)
 ```
 
 ---
