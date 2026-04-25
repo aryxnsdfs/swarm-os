@@ -17,6 +17,40 @@ import { useSimulation } from "./hooks/useSimulation";
 
 const DEFAULT_PROMPT = "Deploy Llama-3 on a 4-node GPU cluster with a strict 500MB VRAM constraint and a $50 budget ceiling. An OOM crash is active on Node-2.";
 
+function FinOpsSummaryBar() {
+  const { messages, scenarioComplete, spent, budget, taskViews, totalReward, rewardFeed } = useSimulationState();
+  if (messages.length === 0) return null;
+
+  const incidentCount = Object.keys(taskViews || {}).length || 1;
+  const aiCost = Number(spent || 0);
+  const humanCost = incidentCount * 79.50;
+  const saved = humanCost - aiCost;
+  const budgetLeft = Number(budget || 50) - aiCost;
+  const isComplete = scenarioComplete;
+  const steps = rewardFeed.length;
+
+  return (
+    <div className={`shrink-0 rounded-lg border px-4 py-2.5 ${isComplete ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/50'}`}>
+      <div className="flex items-center gap-3 mb-1.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${isComplete ? 'bg-emerald-400' : 'bg-zinc-500 animate-pulse'}`} />
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${isComplete ? 'text-emerald-300' : 'text-zinc-400'}`}>
+          {isComplete ? 'Global FinOps Summary' : 'Live FinOps Tracker'}
+        </span>
+        {isComplete && <span className="text-[9px] font-mono text-emerald-600">[ SUCCESS ]</span>}
+      </div>
+      <div className="flex items-center gap-5 text-[10px] font-mono flex-wrap">
+        <span className="text-zinc-500">Incidents: <span className={isComplete ? 'text-emerald-300 font-bold' : 'text-zinc-300'}>{incidentCount}</span></span>
+        <span className="text-zinc-500">Steps: <span className="text-zinc-300">{steps}</span></span>
+        <span className="text-zinc-500">Human Cost: <span className="text-red-400 font-bold">${humanCost.toFixed(2)}</span></span>
+        <span className="text-zinc-500">AI Cost: <span className={isComplete ? 'text-emerald-300 font-bold' : 'text-zinc-300'}>${aiCost.toFixed(3)}</span></span>
+        <span className="text-zinc-500">Saved: <span className="text-emerald-400 font-bold">${saved.toFixed(2)}</span></span>
+        <span className="text-zinc-500">Budget Left: <span className="text-zinc-300">${budgetLeft.toFixed(3)}</span></span>
+        <span className="text-zinc-500">Total Reward: <span className={`font-bold ${totalReward >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{(totalReward >= 0 ? '+' : '')}{totalReward.toFixed(2)}</span></span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("live");
   const { isRunning, scenarioComplete } = useSimulationState();
@@ -134,37 +168,42 @@ export default function App() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              className="h-full p-2 flex gap-2"
+              className="h-full p-2 flex flex-col gap-2"
             >
-              <div className="w-[280px] xl:w-[320px] shrink-0 flex flex-col gap-2 overflow-hidden">
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-                  <DockerPhysicsMonitor />
-                </div>
-                {showPrompt && (
-                  <div className="shrink-0 h-[200px] flex flex-col">
-                    <CommandPrompt />
+              <div className="flex-1 min-h-0 flex gap-2">
+                <div className="w-[280px] xl:w-[320px] shrink-0 flex flex-col gap-2 overflow-hidden">
+                  <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+                    <DockerPhysicsMonitor />
                   </div>
-                )}
+                  {showPrompt && (
+                    <div className="shrink-0 h-[200px] flex flex-col">
+                      <CommandPrompt />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-hidden">
+                  <div className="flex-1 min-h-0">
+                    <EnterpriseChat />
+                  </div>
+                  <div className="h-[250px] shrink-0 overflow-hidden">
+                    <CausalDAG />
+                  </div>
+                </div>
+
+                {/* Consolidated Right Column with Single Scrollbar */}
+                <div className="w-[380px] xl:w-[430px] shrink-0 flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent pr-1">
+                  <div className="shrink-0">
+                    <GitRCAPanel />
+                  </div>
+                  <div className="shrink-0">
+                    <DeadTimeline />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-hidden">
-                <div className="flex-1 min-h-0">
-                  <EnterpriseChat />
-                </div>
-                <div className="h-[250px] shrink-0 overflow-hidden">
-                  <CausalDAG />
-                </div>
-              </div>
-
-              {/* Consolidated Right Column with Single Scrollbar */}
-              <div className="w-[380px] xl:w-[430px] shrink-0 flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent pr-1">
-                <div className="shrink-0">
-                  <GitRCAPanel />
-                </div>
-                <div className="shrink-0">
-                  <DeadTimeline />
-                </div>
-              </div>
+              {/* Global FinOps Summary — full-width bar at the bottom */}
+              <FinOpsSummaryBar />
             </motion.div>
           ) : (
             <motion.div

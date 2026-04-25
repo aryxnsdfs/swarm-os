@@ -277,33 +277,6 @@ export default function EnterpriseChat() {
         )}
       </div>
 
-      {/* Global FinOps Summary — always-visible footer below chat */}
-      {messages.length > 0 && (() => {
-        const incidentCount = Object.keys(taskViews || {}).length || 1;
-        const aiCost = Number(spent || 0);
-        const humanCost = incidentCount * 79.50;
-        const saved = humanCost - aiCost;
-        const budgetLeft = Number(budget || 50) - aiCost;
-        const isComplete = scenarioComplete;
-        return (
-          <div className={`shrink-0 border-t px-4 py-2.5 ${isComplete ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/50'}`}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${isComplete ? 'bg-emerald-400' : 'bg-zinc-500 animate-pulse'}`} />
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${isComplete ? 'text-emerald-300' : 'text-zinc-400'}`}>
-                {isComplete ? 'Global FinOps Summary' : 'Live FinOps Tracker'}
-              </span>
-              {isComplete && <span className="text-[9px] font-mono text-emerald-600 ml-auto">[ SUCCESS ]</span>}
-            </div>
-            <div className="flex items-center gap-4 text-[10px] font-mono flex-wrap">
-              <span className="text-zinc-500">Incidents: <span className={isComplete ? 'text-emerald-300 font-bold' : 'text-zinc-300'}>{incidentCount}</span></span>
-              <span className="text-zinc-500">Human Cost: <span className="text-red-400 font-bold">${humanCost.toFixed(2)}</span></span>
-              <span className="text-zinc-500">AI Cost: <span className={isComplete ? 'text-emerald-300 font-bold' : 'text-zinc-300'}>${aiCost.toFixed(3)}</span></span>
-              <span className="text-zinc-500">Saved: <span className="text-emerald-400 font-bold">${saved.toFixed(2)}</span></span>
-              <span className="text-zinc-500">Budget: <span className="text-zinc-300">${budgetLeft.toFixed(3)}</span></span>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }

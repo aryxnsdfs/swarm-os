@@ -1374,6 +1374,17 @@ async def _run_openenv_frontend_scenario(
                         "agent": observation.active_agent,
                         "m2m": _openenv_action_m2m(action, observation),
                         "think": _openenv_think_text(action, observation),
+                        "points": step_reward,
+                    },
+                }
+            )
+            await broadcast(
+                {
+                    "type": "reward",
+                    "payload": {
+                        "agent": observation.active_agent or "SYSTEM",
+                        "target": f"Step {step_index + 1}",
+                        "value": step_reward,
                     },
                 }
             )
@@ -1899,6 +1910,7 @@ async def _run_demo_orchestration(prompt: str, commander_json: dict, scenario_id
         "vram_peak_gb": round((int(vram_limit.replace('m','')) + 16) / 1000, 2),
         "reward": -1.0, "latency_ms": None, "code": "import torch\noutput = torch.zeros((10000,10000), device='cuda')"
     }})
+    await broadcast({"type": "reward", "payload": {"agent": "CODER", "target": "Baseline OOM", "value": -1.0}})
 
     # \u2500\u2500 Step 3: Manager escalates \u2500\u2500
     await asyncio.sleep(0.8)
@@ -1913,8 +1925,10 @@ async def _run_demo_orchestration(prompt: str, commander_json: dict, scenario_id
     await broadcast({"type": "chat", "payload": {
         "agent": "DETECTIVE",
         "m2m": detective_m2m,
-        "think": detective_think
+        "think": detective_think,
+        "points": 0.10,
     }})
+    await broadcast({"type": "reward", "payload": {"agent": "DETECTIVE", "target": "Root Cause Analysis", "value": 0.10}})
     # Push causal graph node
     causal_engine.add_node("root_diag", root_cause, "error", detective_think[:80])
     await broadcast({"type": "new_causal_event", "payload": {
@@ -1948,20 +1962,24 @@ async def _run_demo_orchestration(prompt: str, commander_json: dict, scenario_id
         "reward": 0.69, "latency_ms": 42,
         "code": "import torch\nwith torch.autocast('cuda', torch.float16):\n    pass  # INJECT_CHALLENGE_HERE"
     }})
+    await broadcast({"type": "reward", "payload": {"agent": "CODER", "target": "Sandbox PASS", "value": 0.69}})
 
     # \u2500\u2500 Step 7: Coder and Commander close the incident \u2500\u2500
     await asyncio.sleep(0.5)
     await broadcast({"type": "chat", "payload": {
         "agent": "CODER",
         "m2m": f"SANDBOX_PASS | VRAM={pass_vram}MB | LATENCY=42ms",
-        "think": f"Optimized fix passed! VRAM peak at {pass_vram}MB — within the {vram_limit} constraint. Fix reduced memory usage by {round((1 - pass_vram/(int(vram_limit.replace('m','')) + 1))*100)}%."
+        "think": f"Optimized fix passed! VRAM peak at {pass_vram}MB — within the {vram_limit} constraint. Fix reduced memory usage by {round((1 - pass_vram/(int(vram_limit.replace('m','')) + 1))*100)}%.",
+        "points": 0.69,
     }})
     await asyncio.sleep(1.0)
     await broadcast({"type": "chat", "payload": {
         "agent": "COMMANDER",
         "m2m": f"RESOLVE | INCIDENT_CLOSED | COST_{cost_str} | SLA_SAFE",
-        "think": f"All systems green. Sandbox passed. Total cost: {cost_str}. SLA maintained. Logging DPO training pair and generating RCA."
+        "think": f"All systems green. Sandbox passed. Total cost: {cost_str}. SLA maintained. Logging DPO training pair and generating RCA.",
+        "points": 0.20,
     }})
+    await broadcast({"type": "reward", "payload": {"agent": "COMMANDER", "target": "Incident Closed", "value": 0.20}})
 
     await broadcast({"type": "new_causal_event", "payload": {
         "node": {"id": "dpo_hook", "label": "TRL DPO Training Triggered", "type": "escalation", "detail": "Reward pair logged for GRPO alignment."},
