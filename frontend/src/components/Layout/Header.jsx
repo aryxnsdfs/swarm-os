@@ -14,7 +14,7 @@ const AGENT_DISPLAY = {
   COMPLIANCE_AGENT: 'Compliance',
 };
 
-export default function Header() {
+export default function Header({ onClearReset }) {
   const dispatch = useSimulationDispatch();
   const { slaRemaining, spent, budget, activeAgents, telemetry, validatorRuntime } = useSimulationState();
 
@@ -38,6 +38,7 @@ export default function Header() {
     if (!confirmed) return;
 
     dispatch({ type: 'CLEAR_SIMULATION' });
+    if (onClearReset) onClearReset();
     try {
       await fetch(`${getApiBase()}/api/frontend/clear`, { method: 'POST' });
     } catch (error) {
