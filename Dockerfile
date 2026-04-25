@@ -3,9 +3,9 @@
 #
 # Single-image stack:
 #   1. Stage `web`   — node:20 builds the React frontend into frontend/dist
-#   2. Stage `app`   — CUDA 12.1 runtime
-#                       - llama-cpp-python[server]  (CUDA build)  -> 127.0.0.1:1234
-#                       - backend/main.py uvicorn                  -> 0.0.0.0:7860
+#   2. Stage `app`   — CUDA 12.1 runtime (pre-built llama-cpp-python wheel)
+#                       - llama-cpp-python[server]  (CUDA wheel) -> 127.0.0.1:1234
+#                       - backend/main.py uvicorn                 -> 0.0.0.0:7860
 #                       - frontend/dist mounted at  /
 #                       - inference.py reachable from `python inference.py`
 # ============================================================================
@@ -22,7 +22,7 @@ RUN npm run build
 
 
 # -------- Stage 2: runtime --------
-FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS app
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04 AS app
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -36,13 +36,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LOCAL_OPENAI_API_KEY=lm-studio \
     LLM_PROVIDER=local
 
-# System deps:
-#   - python3.11 + pip
-#   - build-essential / cmake / git for compiling llama-cpp-python from source with CUDA
-#   - curl for the start.sh readiness probe
+# System deps: python3.11 + pip + curl (for start.sh readiness probe)
+# No build-essential/cmake needed — using pre-built CUDA wheel for llama-cpp-python
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3.11 python3.11-dev python3-pip \
-        build-essential cmake git curl ca-certificates \
+        python3.11 python3-pip \
+        curl ca-certificates \
     && ln -sf /usr/bin/python3.11 /usr/bin/python \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && rm -rf /var/lib/apt/lists/*
@@ -50,10 +48,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Python deps (cached layer)
+# Install llama-cpp-python from the pre-built CUDA 12.1 wheel index (no compilation)
 COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip setuptools wheel \
     && pip install -r /app/requirements.txt \
-    && CMAKE_ARGS="-DGGML_CUDA=on" pip install --no-binary=llama-cpp-python "llama-cpp-python[server]>=0.2.90"
+    && pip install "llama-cpp-python[server]>=0.2.90" \
+        --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
 
 # App code
 COPY pyproject.toml README.md openenv.yaml inference.py start.sh /app/
