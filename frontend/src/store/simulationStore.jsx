@@ -317,6 +317,9 @@ function simulationReducer(state, action) {
       return { ...state, trainingPhase: newPhase };
     }
     case "TICK": {
+      if (!state.isRunning || state.isPaused || state.scenarioComplete) {
+        return state;
+      }
       const tickMs = action.payload * state.speed;
       const newElapsed = state.elapsedMs + tickMs;
       const newSla = Math.max(0, state.slaRemaining - tickMs / 1000);

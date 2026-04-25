@@ -77,6 +77,15 @@ export function useSimulation() {
     stateRef.current = state;
   }, [state]);
 
+  useEffect(() => {
+    if (!state.isRunning || state.scenarioComplete) {
+      if (tickRef.current) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+    }
+  }, [state.isRunning, state.scenarioComplete]);
+
   const clearAllTimers = useCallback(() => {
     timersRef.current.forEach(t => clearTimeout(t));
     timersRef.current = [];

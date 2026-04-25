@@ -48,6 +48,10 @@ from inference import (
     detect_provider,
     effective_prompt_for_task,
     llm_action,
+    log_end,
+    log_start,
+    log_step,
+    print_runtime_banner,
     select_task_id,
 )
 from swarm_openenv_env.environment import IncidentResponseEnv
@@ -1336,6 +1340,18 @@ async def _run_openenv_frontend_scenario(
                 "OpenAI-compatible runtime or enable ALLOW_SCRIPTED_BASELINE=1."
             )
 
+        print_runtime_banner(clients, [resolved_task_id])
+        log_start(
+            task=resolved_task_id,
+            env="IncidentResponseEnv",
+            model=MODEL_NAME,
+            title=task.title,
+            difficulty=getattr(task, "difficulty", "medium"),
+            max_steps=task.max_steps,
+        )
+
+        all_rewards: list[float] = []
+
         for step_index in range(task.max_steps):
             action = llm_action(
                 clients,
@@ -1346,6 +1362,8 @@ async def _run_openenv_frontend_scenario(
                 mission_prompt,
             )
             observation = env.step(action)
+            step_reward = float(observation.reward or 0.0)
+            all_rewards.append(step_reward)
             _sync_physics_from_openenv(observation)
             await broadcast({"type": "telemetry", "payload": _build_openenv_telemetry_payload(observation)})
             await broadcast({"type": "preflight", "payload": _build_openenv_preflight_payload(observation)})
@@ -1359,6 +1377,21 @@ async def _run_openenv_frontend_scenario(
                     },
                 }
             )
+
+            telem = observation.telemetry or {}
+            log_step(
+                step=step_index + 1,
+                action=json.dumps(compact_action_dict(action)),
+                reward=step_reward,
+                done=bool(observation.done),
+                error=None,
+                feedback=observation.last_feedback or "",
+                telemetry=telem if telem else None,
+                budget_limit_usd=telem.get("budget_limit_usd"),
+                cost_accrued_usd=telem.get("cost_accrued_usd"),
+                agent=observation.active_agent,
+            )
+
             step_node = f"openenv_step_{step_index + 1}"
             await _record_causal_event(
                 step_node,
@@ -1393,13 +1426,22 @@ async def _run_openenv_frontend_scenario(
             if observation.done:
                 break
 
+        final_score = float(env.state.current_score) if hasattr(env.state, "current_score") else (all_rewards[-1] if all_rewards else 0.0)
+        final_success = observation.done and final_score >= task.success_threshold
+        log_end(
+            success=final_success,
+            steps=step_index + 1,
+            score=final_score,
+            rewards=all_rewards,
+        )
+
         await _finalize_orchestration(
             commander_payload,
             scenario_id,
             openenv_observation=observation,
             openenv_task=task,
             openenv_steps=step_index + 1,
-            openenv_success=observation.done and float(observation.reward or 0.0) >= task.success_threshold,
+            openenv_success=final_success,
         )
     except asyncio.CancelledError:
         logger.info("OpenEnv orchestration task cancelled for task=%s", resolved_task_id)
