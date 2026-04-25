@@ -24,7 +24,7 @@ set -euo pipefail
 
 PORT="${PORT:-7860}"
 # Strip whitespace/newlines that HF Secrets UI sometimes adds
-MODEL_REPO_ID="$(echo -n "${MODEL_REPO_ID:-aryan-gupta-2010/meta_hackthon_2010_2026}" | tr -d '[:space:]')"
+MODEL_REPO_ID="$(echo -n "${MODEL_REPO_ID:-aryxn323/meta_hackthon_2010_2026}" | tr -d '[:space:]')"
 MODEL_FILENAME="$(echo -n "${MODEL_FILENAME:-Llama-3.1-8B-Instruct.Q4_K_M.gguf}" | tr -d '\n\r' | xargs)"
 MODEL_DIR="/data/models"
 MODEL_PATH="${MODEL_DIR}/${MODEL_FILENAME}"
