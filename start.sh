@@ -57,7 +57,10 @@ export MODEL_PATH="${MODEL_PATH}"
 
 # ----- 2. Launch llama.cpp OpenAI server on 127.0.0.1:1234 -----
 echo "[start.sh] starting llama-cpp-python server on 127.0.0.1:1234 (n_gpu_layers=${N_GPU_LAYERS}, n_ctx=${N_CTX})"
-python -m llama_cpp.server \
+# Unset PORT for this subprocess — llama-cpp-python's pydantic-settings
+# reads PORT from env and would bind to 7860 instead of 1234, stealing
+# the port that uvicorn needs.
+env -u PORT python -m llama_cpp.server \
     --model "${MODEL_PATH}" \
     --host 127.0.0.1 \
     --port 1234 \
