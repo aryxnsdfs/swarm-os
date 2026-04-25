@@ -1,0 +1,46 @@
+# Python virtualenvs / caches
+.venv/
+.uv-cache/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+swarm_incident_response_openenv.egg-info/
+
+# Heavy model files (GGUF lives in your HF *model* repo, not the Space)
+models/
+final-model/
+*.gguf
+*.bin
+*.safetensors
+
+# Frontend build artifacts (built inside the Docker image)
+frontend/dist/
+frontend/node_modules/
+node_modules/
+
+# Local / IDE noise
+.tmp.drivedownload/
+.tmp.driveupload/
+.cursor/
+.vscode/
+.idea/
+*.log
+
+# Local env files
+.env
+.env.local
+
+# Lock files not needed in Space
+uv.lock
+
+# Large training / reference folders not needed at runtime
+FrontierLabs-Env-main/
+dataset/
+
+# Large images not needed in Space
+*.png
+
+# Batch / PowerShell scripts (Windows-only, not needed in Docker Space)
+*.bat
+*.ps1

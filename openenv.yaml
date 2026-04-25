@@ -1,0 +1,40 @@
+name: swarm-incident-response-openenv
+version: "1.0.0"
+description: "Real-world incident response benchmark with typed OpenEnv models and dense rewards."
+entrypoint: "swarm_openenv_env.environment:IncidentResponseEnv"
+
+metadata:
+  primary_model: "Meta-Llama-3.1-8B-Instruct"
+  local_model_path: "models/aryan-gupta-2010/meta_hackthon_2010_2026/Llama-3.1-8B-Instruct.Q4_K_M.gguf"
+  
+  agent_architecture:
+    description: "A multi-agent Swarm-OS architecture where specialized agents collaborate to resolve production incidents."
+    agents:
+      - name: "MANAGER"
+        model: "Meta-Llama-3.1-8B-Instruct"
+        role: "Handles incident triage, opens tickets, and communicates with stakeholders."
+      - name: "DETECTIVE / SRE_AGENT / DBA_AGENT"
+        model: "Meta-Llama-3.1-8B-Instruct"
+        role: "Investigates logs, artifacts, and telemetry to find the root cause of the incident."
+      - name: "CODER"
+        model: "Meta-Llama-3.1-8B-Instruct"
+        role: "Writes remediation plans, fixes code, and optimizes infrastructure."
+      - name: "COMMANDER"
+        model: "Meta-Llama-3.1-8B-Instruct"
+        role: "Orchestrates the swarm, resolves disagreements, and finalizes the Root Cause Analysis."
+
+  sandbox_environment:
+    type: "Double-Lock Docker Sandbox"
+    description: "We use a strictly isolated Docker sandbox with constrained GPU VRAM limits to safely execute and validate the Coder agent's PyTorch/infrastructure scripts without risking the host machine. It provides a deterministic, secure physics engine for evaluation."
+
+  tools_used:
+    - name: "inspect_artifact"
+      purpose: "Allows the Detective/SRE agents to read simulated telemetry, runbooks, and logs to gather evidence for the RCA."
+    - name: "open_ticket"
+      purpose: "Used by the Manager agent to formally declare an incident severity and track business impact."
+    - name: "send_status_update"
+      purpose: "Used by the Manager to communicate SLAs, ETAs, and mitigation progress to stakeholders."
+    - name: "propose_fix"
+      purpose: "Used by the Coder agent to submit a code-level remediation plan to the Docker sandbox for physical validation."
+    - name: "resolve_incident"
+      purpose: "Used by the Commander agent to close the ticket, summarize costs, and auto-generate the final RCA document after a successful fix."

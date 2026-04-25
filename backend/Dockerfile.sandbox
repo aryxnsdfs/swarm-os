@@ -1,0 +1,12 @@
+# ═══════════════════════════════════════════════════════════════
+# FrontierLabs Swarm-OS — GPU Sandbox Container
+# ═══════════════════════════════════════════════════════════════
+#
+# Build:
+#   docker build -t swarm-os-sandbox:pytorch221 -f Dockerfile.sandbox .
+# ═══════════════════════════════════════════════════════════════
+
+FROM pytorch/pytorch:2.2.1-cuda12.1-cudnn8-runtime
+
+# Set the working directory
+WORKDIR /workspace

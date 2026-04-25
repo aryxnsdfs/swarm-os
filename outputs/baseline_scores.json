@@ -1,0 +1,48 @@
+{
+  "benchmark": "swarm-incident-response-openenv",
+  "model": "meta_hackthon_2010_2026",
+  "provider": "local",
+  "provider_chain": [
+    "local"
+  ],
+  "openai_base_url": "https://api.openai.com/v1",
+  "local_openai_base_url": "http://127.0.0.1:1234/v1",
+  "trained_model_path": "D:\\op\\models\\aryan-gupta-2010\\meta_hackthon_2010_2026\\Llama-3.1-8B-Instruct.Q4_K_M.gguf",
+  "prompt": "",
+  "recommended_prompts": {
+    "general": "You are demonstrating a frontier OpenEnv benchmark for Theme 3.1 Professional Tasks. Behave like a world-class production incident responder working inside a real enterprise system. Use evidence, escalation discipline, safe remediation, and crisp executive communication.",
+    "task_easy_gpu_oom": "CRITICAL INCIDENT: A single-GPU production fine-tuning job is breaching memory and the business needs an audit-safe rescue plan now. Investigate the evidence like a senior ML platform engineer, open a properly prioritized incident, communicate impact, and propose a strict single-GPU remediation using mixed precision, checkpointing, or safer memory controls. Do not hand-wave. Make every action sound production-ready and credible.",
+    "task_medium_schema_drift": "SEV-2 DATA INCIDENT: Customer-facing dashboards are stale after an upstream schema change. Operate like a data platform incident commander: inspect the schema evidence, explain the blast radius, communicate ETA to stakeholders, and propose a backward-compatible fix with validation and backfill steps that would pass an engineering review.",
+    "task_hard_canary_regression": "SEV-1 CANARY FAILURE: A checkout canary is causing customer-visible latency and errors in eu-west. Respond like a production SRE under pressure: inspect deploy evidence, confirm impact, post a stakeholder update, recommend the safest rollback or feature-flag mitigation, and close only with monitored recovery language that sounds real."
+  },
+  "results": [
+    {
+      "task_id": "task_easy_gpu_oom",
+      "difficulty": "easy",
+      "score": 1.0,
+      "success": true,
+      "steps": 4,
+      "error": null,
+      "prompt": "CRITICAL INCIDENT: A single-GPU production fine-tuning job is breaching memory and the business needs an audit-safe rescue plan now. Investigate the evidence like a senior ML platform engineer, open a properly prioritized incident, communicate impact, and propose a strict single-GPU remediation using mixed precision, checkpointing, or safer memory controls. Do not hand-wave. Make every action sound production-ready and credible."
+    },
+    {
+      "task_id": "task_medium_schema_drift",
+      "difficulty": "medium",
+      "score": 1.0,
+      "success": true,
+      "steps": 6,
+      "error": null,
+      "prompt": "SEV-2 DATA INCIDENT: Customer-facing dashboards are stale after an upstream schema change. Operate like a data platform incident commander: inspect the schema evidence, explain the blast radius, communicate ETA to stakeholders, and propose a backward-compatible fix with validation and backfill steps that would pass an engineering review."
+    },
+    {
+      "task_id": "task_hard_canary_regression",
+      "difficulty": "hard",
+      "score": 1.0,
+      "success": true,
+      "steps": 5,
+      "error": null,
+      "prompt": "SEV-1 CANARY FAILURE: A checkout canary is causing customer-visible latency and errors in eu-west. Respond like a production SRE under pressure: inspect deploy evidence, confirm impact, post a stakeholder update, recommend the safest rollback or feature-flag mitigation, and close only with monitored recovery language that sounds real."
+    }
+  ],
+  "average_score": 1.0
+}

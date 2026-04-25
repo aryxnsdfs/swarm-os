@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #09090b;
+  color: #a1a1aa;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #18181b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* ── React Flow Dark Theme Overrides ── */
+.react-flow__background {
+  background-color: #09090b !important;
+}
+
+.react-flow__controls {
+  background: #27272a !important;
+  border: 1px solid #3f3f46 !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: #27272a !important;
+  border-bottom: 1px solid #3f3f46 !important;
+  fill: #a1a1aa !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #3f3f46 !important;
+}
+
+.react-flow__edge-path {
+  stroke: #3f3f46 !important;
+  stroke-width: 2 !important;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke: #10b981 !important;
+  stroke-dasharray: 5 !important;
+  animation: dashdraw 0.5s linear infinite !important;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+}
+
+/* ── Utility Classes ── */
+.panel-card {
+  background-color: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 0.5rem;
+}
+
+.terminal-embed {
+  background-color: #0d0d0d;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Status Dot Animations ── */
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+.status-dot-live {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* ── Gauge Warning Flash ── */
+@keyframes flash-red {
+  0%, 100% { border-color: #27272a; }
+  50% { border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.3); }
+}
+
+.gauge-warning {
+  animation: flash-red 1s ease-in-out 3;
+}
+
+/* ── Recharts Dark Tooltip Override ── */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #18181b !important;
+  border: 1px solid #27272a !important;
+  border-radius: 6px !important;
+  color: #e4e4e7 !important;
+}
+
+.recharts-tooltip-wrapper .recharts-tooltip-label {
+  color: #a1a1aa !important;
+}
+
+.recharts-tooltip-wrapper .recharts-tooltip-item {
+  color: #e4e4e7 !important;
+}
+
+/* ── Recharts Bar Hover — prevent white flash ── */
+.recharts-bar-rectangle:hover {
+  filter: brightness(1.2);
+}
+
+/* ── React Flow Edge Visibility ── */
+.react-flow__edge-path {
+  stroke-width: 2px !important;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke: #10b981 !important;
+  stroke-dasharray: 5 !important;
+  stroke-width: 2px !important;
+}

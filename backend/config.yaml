@@ -1,0 +1,51 @@
+active_model: "llama-3.1-8b-instruct-4bit"
+
+models:
+  llama-3.1-8b-instruct-4bit:
+    name: "Llama-3.1-8B-Instruct (4-bit QLoRA)"
+    hf_id: "unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit"
+    max_vram_gb: 6
+    context_length: 8192
+    quantization: "4bit"
+    tokens_per_sec: "35-50"
+    best_for: ["COMMANDER", "CODER"]
+    suitable_for: "RTX 3060 12GB"
+    notes: "Primary model. Fast inference, strong instruction following."
+
+  deepseek-r1-distill-llama-8b-4bit:
+    name: "DeepSeek-R1-Distill-Llama-8B (4-bit QLoRA)"
+    hf_id: "unsloth/DeepSeek-R1-Distill-Llama-8B-bnb-4bit"
+    max_vram_gb: 5.5
+    context_length: 8192
+    quantization: "4bit"
+    tokens_per_sec: "30-45"
+    best_for: ["DETECTIVE"]
+    suitable_for: "RTX 3060 12GB"
+    notes: "Superior CoT reasoning for causal trace analysis. Higher token output — monitor token penalty."
+
+  llama-3.1-70b-instruct:
+    name: "Llama-3.1-70B-Instruct"
+    hf_id: "meta-llama/Llama-3.1-70B-Instruct"
+    max_vram_gb: 40
+    context_length: 8192
+    quantization: "none"
+    tokens_per_sec: "10-20"
+    best_for: ["COMMANDER", "DETECTIVE", "CODER"]
+    suitable_for: "A100/H100"
+    notes: "Full-scale model for enterprise compute."
+
+  llama-3.1-8b-instruct:
+    name: "Llama-3.1-8B-Instruct (Full Precision)"
+    hf_id: "meta-llama/Llama-3.1-8B-Instruct"
+    max_vram_gb: 16
+    context_length: 8192
+    quantization: "none"
+    tokens_per_sec: "20-35"
+    best_for: ["COMMANDER", "CODER"]
+    suitable_for: "RTX 4090 24GB"
+    notes: "Full precision for higher quality when VRAM available."
+
+# Per-agent model override — allows DETECTIVE to use DeepSeek while others use Llama
+agent_model_overrides:
+  DETECTIVE: "deepseek-r1-distill-llama-8b-4bit"
+  # COMMANDER and CODER default to active_model

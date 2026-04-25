@@ -1,0 +1,20 @@
+{
+  "tasks": [
+    {
+      "task_id": "task_easy_gpu_oom",
+      "score": 1.0,
+      "passed": true
+    },
+    {
+      "task_id": "task_medium_schema_drift",
+      "score": 1.0,
+      "passed": true
+    },
+    {
+      "task_id": "task_hard_canary_regression",
+      "score": 1.0,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

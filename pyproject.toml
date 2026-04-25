@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swarm-incident-response-openenv"
+version = "1.0.0"
+description = "OpenEnv incident response environment with dense rewards and three graded tasks."
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+  "docker==7.1.0",
+  "fastapi>=0.115.2,<1",
+  "gradio>=5,<6",
+  "openai==2.24.0",
+  "openenv-core==0.2.3",
+  "pydantic>=2.11.7,<3",
+  "python-multipart>=0.0.9",
+  "requests==2.32.5",
+  "uvicorn>=0.35,<1"
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[tool.setuptools.packages.find]
+include = ["server*", "swarm_openenv_env*"]
