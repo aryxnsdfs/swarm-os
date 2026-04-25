@@ -22,7 +22,7 @@ RUN npm run build
 
 
 # -------- Stage 2: runtime --------
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04 AS app
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS app
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
