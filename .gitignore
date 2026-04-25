@@ -38,8 +38,10 @@ uv.lock
 FrontierLabs-Env-main/
 dataset/
 
-# Large images not needed in Space
+# Large images not needed in Space (except training plots)
 *.png
+!swarm_os_policy_curve.png
+!swarm_os_reward_curve.png
 
 # Batch / PowerShell scripts (Windows-only, not needed in Docker Space)
 *.bat

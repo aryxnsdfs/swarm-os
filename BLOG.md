@@ -521,11 +521,21 @@ We trained a language model to stop apologizing and start engineering — and th
 
 | Resource | Link |
 |---|---|
-| Live Environment (HuggingFace Space) | [https://huggingface.co/spaces/aryxn323/swarm-os] |
+| Live Environment (HuggingFace Space) | [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os) |
 | Colab Training Script | [Open in Colab](https://colab.research.google.com/drive/1iPbU5HVCGfyxXiYtaTo8ZsybMq0i-_kK?usp=sharing) |
 | OpenEnv Framework | [github.com/meta-pytorch/OpenEnv](https://github.com/meta-pytorch/OpenEnv) |
 | TRL GRPO Trainer | [huggingface.co/docs/trl](https://huggingface.co/docs/trl) |
 | Unsloth | [github.com/unslothai/unsloth](https://github.com/unslothai/unsloth) |
+| Trained Model (GGUF) | [aryxn323/meta_hackthon_2010_2026](https://huggingface.co/aryxn323/meta_hackthon_2010_2026) |
+| Manifest File | [`openenv.yaml`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/openenv.yaml) |
+| Inference Engine | [`inference.py`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/inference.py) |
+| Training Script (Kaggle) | [`kaggle_training_notebook.py`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/kaggle_training_notebook.py) |
+| Training Visualization | [`kaggle_visualize_training.py`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/kaggle_visualize_training.py) |
+| Reward Telemetry Log | [`reward_log.jsonl`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/reward_log.jsonl) |
+| Training Summary | [`training_summary.json`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/training_summary.json) |
+| Policy Curve (KL Divergence) | [`swarm_os_policy_curve.png`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/swarm_os_policy_curve.png) |
+| Reward Curve | [`swarm_os_reward_curve.png`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/swarm_os_reward_curve.png) |
+| Blog Post | [`BLOG.md`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/BLOG.md) |
 
 ---
 
