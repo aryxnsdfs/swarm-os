@@ -37,10 +37,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LLM_PROVIDER=local
 
 # System deps: python3.11 + pip + curl (for start.sh readiness probe)
-# No build-essential/cmake needed — using pre-built CUDA wheel for llama-cpp-python
+# libgomp1 is required by llama-cpp-python (OpenMP runtime)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3.11 python3-pip \
-        curl ca-certificates \
+        curl ca-certificates libgomp1 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && rm -rf /var/lib/apt/lists/*
