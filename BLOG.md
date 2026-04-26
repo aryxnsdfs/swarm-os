@@ -569,55 +569,6 @@ This is a complete map of what every panel on the dashboard means and what every
 
 ---
 
-## How to Upload Everything to Hugging Face and GitHub
-
-The same files mirror to both targets. Setup is one-time; afterwards each change is two `git push` commands.
-
-#### One-time setup
-
-```bash
-cd d:/op
-git init && git branch -M main
-git config user.email "you@example.com"
-git config user.name  "Your Name"
-git lfs install && git lfs track "*.png"
-git add . && git commit -m "Initial Swarm-OS submission"
-```
-
-#### Hugging Face Space
-
-```bash
-huggingface-cli login
-huggingface-cli repo create aryxn323/swarm-os --type space --space_sdk docker
-git remote add space https://huggingface.co/spaces/aryxn323/swarm-os
-git push space HEAD:main
-# Then in HF UI:
-#   Settings → Variables and secrets → MODEL_REPO_ID, MODEL_FILENAME, HF_TOKEN, etc.
-#   Settings → Hardware → t4-small (T4 GPU, 16GB VRAM)
-#   Settings → Persistent storage → 20 GB (caches the GGUF across restarts)
-```
-
-#### GitHub mirror
-
-```bash
-# Create an empty repo at github.com/new (e.g. swarm-os) without a README
-git remote add origin https://github.com/<your-github-user>/swarm-os.git
-git push -u origin main
-```
-
-When prompted for credentials on Windows/PowerShell, use a **GitHub Personal Access Token** with `Contents: Read and write` permission.
-
-#### Pushing follow-up changes
-
-```bash
-git add .
-git commit -m "Describe your change"
-git push origin main      # GitHub
-git push space main       # Hugging Face Space (rebuilds the Space)
-```
-
----
-
 ## Running a Fully Local Model in the Cloud
 
 > **The entire system — the 4.9GB GGUF model, the inference engine, the React dashboard, and the FastAPI orchestrator — runs inside a single Hugging Face Docker Space with zero external API calls.**
@@ -631,6 +582,7 @@ At cold boot, `start.sh` dynamically pulls the trained GGUF model into persisten
 | Resource | Link |
 |---|---|
 | Live Environment (HuggingFace Space) | [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os) |
+| GitHub Repository | [https://github.com/aryxnsdfs/swarm-os](https://github.com/aryxnsdfs/swarm-os) |
 | Colab Training Script | [Open in Colab](https://colab.research.google.com/drive/1iPbU5HVCGfyxXiYtaTo8ZsybMq0i-_kK?usp=sharing) |
 | OpenEnv Framework | [github.com/meta-pytorch/OpenEnv](https://github.com/meta-pytorch/OpenEnv) |
 | TRL GRPO Trainer | [huggingface.co/docs/trl](https://huggingface.co/docs/trl) |

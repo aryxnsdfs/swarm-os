@@ -21,6 +21,7 @@ suggested_hardware: t4-small
 | Resource | Link |
 |---|---|
 | Live Environment (HuggingFace Space) | [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os) |
+| GitHub Repository | [https://github.com/aryxnsdfs/swarm-os](https://github.com/aryxnsdfs/swarm-os) |
 | Colab Training Script | [Open in Colab](https://colab.research.google.com/drive/1iPbU5HVCGfyxXiYtaTo8ZsybMq0i-_kK?usp=sharing) |
 | OpenEnv Framework | [github.com/meta-pytorch/OpenEnv](https://github.com/meta-pytorch/OpenEnv) |
 | TRL GRPO Trainer | [huggingface.co/docs/trl](https://huggingface.co/docs/trl) |
@@ -142,9 +143,8 @@ By leveraging:
 9. [The Monolithic Export (Local Autonomy)](#part-vi-the-monolithic-export-local-autonomy)
 10. [Hackathon Compliance Checklist](#hackathon-compliance-checklist)
 11. [Quick Start](#quick-start)
-12. [How to Upload to GitHub](#how-to-upload-to-github)
-13. [Tech Stack](#tech-stack)
-14. [OpenEnv Backend: Technical Reference](#openenv-backend-technical-reference)
+12. [Tech Stack](#tech-stack)
+13. [OpenEnv Backend: Technical Reference](#openenv-backend-technical-reference)
 
 ---
 
@@ -895,66 +895,6 @@ cd frontend && npm run dev
 # terminal 4 — drive a scenario
 python inference.py
 ```
-
-## How to Upload to GitHub
-
-The same files that ship to the Hugging Face Space are mirrored to GitHub for source-control review. This is a one-time setup; afterwards every change is a single `git push`.
-
-```bash
-# 1. Initialize the local repo (skip if already a git repo)
-cd d:/op
-git init
-git branch -M main
-
-# 2. Configure your identity (one-time)
-git config user.email "you@example.com"
-git config user.name  "Your Name"
-
-# 3. Make sure Git LFS is installed and tracking the large training plots
-#    (the .gitattributes file is already committed for this)
-git lfs install
-git lfs track "*.png"
-
-# 4. Stage everything respected by .gitignore
-git add .
-
-# 5. Commit
-git commit -m "Initial Swarm-OS submission"
-
-# 6. Create an empty repo on github.com/new (e.g. swarm-os) without a README
-
-# 7. Add the GitHub remote and push
-git remote add origin https://github.com/<your-github-user>/swarm-os.git
-git push -u origin main
-```
-
-When prompted for credentials on Windows/PowerShell, use a **GitHub Personal Access Token** (Settings → Developer settings → Personal access tokens → Fine-grained tokens) with `Contents: Read and write` permission on the target repo.
-
-#### Pushing follow-up changes
-
-After the one-time setup, mirroring a change to both GitHub and the Hugging Face Space is two pushes:
-
-```bash
-git add .
-git commit -m "Describe your change"
-git push origin main      # GitHub
-git push space main       # Hugging Face Space (rebuilds the Space)
-```
-
-#### What gets uploaded
-
-The `.gitignore` is configured so the upload contains exactly the files referenced in [Submission Resources](#submission-resources):
-
-- All Python source (`backend/`, `swarm_openenv_env/`, `inference.py`, `kaggle_training_notebook.py`, `kaggle_visualize_training.py`)
-- The compiled React dashboard (`frontend/dist/`)
-- The OpenEnv manifest (`openenv.yaml`)
-- Training artifacts (`reward_log.jsonl`, `training_summary.json`, `swarm_os_policy_curve.png`, `swarm_os_reward_curve.png`)
-- Documentation (`README.md`, `BLOG.md`)
-- `Dockerfile` and `start.sh` for the HF Space
-
-Heavy artifacts that are *not* uploaded directly: the GGUF model (lives in [`aryxn323/meta_hackthon_2010_2026`](https://huggingface.co/aryxn323/meta_hackthon_2010_2026) and is downloaded at cold-boot by `start.sh`), the local `node_modules/`, virtual environments, and any `.cache/` directories.
-
----
 
 ### Reproducing the Training (Kaggle T4)
 
