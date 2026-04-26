@@ -30,6 +30,13 @@ MODEL_DIR="/data/models"
 MODEL_PATH="${MODEL_DIR}/${MODEL_FILENAME}"
 N_GPU_LAYERS="${N_GPU_LAYERS:--1}"
 N_CTX="${N_CTX:-4096}"
+SWARM_LOG_FILE="${SWARM_LOG_FILE:-/data/swarm-os-container.log}"
+
+# HF's Container log pane can occasionally show "No logs" even while stdout is
+# flowing. Tee every process log to persistent storage and expose it via /logs.
+mkdir -p "$(dirname "${SWARM_LOG_FILE}")"
+: > "${SWARM_LOG_FILE}"
+exec > >(tee -a "${SWARM_LOG_FILE}") 2>&1
 
 echo "[start.sh] PORT=${PORT}  MODEL=${MODEL_REPO_ID}/${MODEL_FILENAME}"
 

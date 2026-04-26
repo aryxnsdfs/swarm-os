@@ -25,7 +25,7 @@ if repo_root_str not in sys.path:
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -68,6 +68,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("swarm-os.main")
 print(f"[swarm-os] Backend module loaded — PID={os.getpid()}", flush=True)
+SWARM_LOG_FILE = Path(os.getenv("SWARM_LOG_FILE", "/data/swarm-os-container.log"))
+LLAMA_LOG_FILE = Path("/tmp/llama_cpp_server.log")
 
 # ════════════════════════════════════════════════════════════════════
 # 🎛️  DEMO MODE TOGGLE — Change this ONE variable before your pitch
@@ -254,6 +256,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _read_log_tail(path: Path, max_bytes: int = 120_000) -> str:
+    if not path.exists():
+        return f"[swarm-os] Log file not created yet: {path}\n"
+    with path.open("rb") as handle:
+        handle.seek(0, os.SEEK_END)
+        size = handle.tell()
+        handle.seek(max(0, size - max_bytes))
+        return handle.read().decode("utf-8", errors="replace")
+
+
+@app.get("/logs", response_class=PlainTextResponse)
+async def logs_endpoint():
+    """Fallback runtime logs endpoint for HF Spaces when Container pane is blank."""
+    sections = [
+        "==================== Swarm-OS Container Log ====================\n",
+        _read_log_tail(SWARM_LOG_FILE),
+        "\n==================== llama-cpp Server Log ====================\n",
+        _read_log_tail(LLAMA_LOG_FILE, max_bytes=60_000),
+    ]
+    return "".join(sections)
+
+
+@app.get("/api/logs", response_class=PlainTextResponse)
+async def api_logs_endpoint():
+    return await logs_endpoint()
 
 
 # -- Pydantic Models --
