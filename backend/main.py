@@ -58,12 +58,16 @@ from swarm_openenv_env.tasks import get_task
 
 
 # -- Logging Configuration --
+import sys
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-7s | %(name)-20s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
+    stream=sys.stderr,
+    force=True,
 )
 logger = logging.getLogger("swarm-os.main")
+print(f"[swarm-os] Backend module loaded — PID={os.getpid()}", flush=True)
 
 # ════════════════════════════════════════════════════════════════════
 # 🎛️  DEMO MODE TOGGLE — Change this ONE variable before your pitch
@@ -100,6 +104,9 @@ scenario_task: Optional[asyncio.Task] = None
 async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle."""
     global config_manager, reward_calculator, physics_engine, causal_engine, evaluator, orchestrator, llm_inference
+    print("═" * 60, flush=True)
+    print("  Swarm-OS Backend — Initializing components", flush=True)
+    print("═" * 60, flush=True)
     logger.info("Initializing Swarm-OS Backend components...")
     
     config_manager = ModelConfigManager()
@@ -117,8 +124,10 @@ async def lifespan(app: FastAPI):
     llm_inference.log_runtime_summary()
     _bound_port = os.getenv("PORT", "8000")
     logger.info("Swarm-OS Backend ready on http://0.0.0.0:%s", _bound_port)
+    print(f"[swarm-os] Backend ready — port={_bound_port}, demo_mode={DEMO_MODE}", flush=True)
+    print(f"[swarm-os] Waiting for user to click 'Start inference.py'...", flush=True)
+    print("═" * 60, flush=True)
     
-    # Ensure we don't start the background log spam until the user starts a scenario in UI
     yield
     
     logger.info("Swarm-OS Backend shutting down. %d WebSocket clients disconnected.", len(connected_clients))
@@ -1294,6 +1303,10 @@ async def _run_all_openenv_tasks(
             "model": MODEL_NAME,
         }
         logger.info("═══ Running task %d/%d: %s (%s) ═══", idx + 1, len(task_ids), task_id, task.title)
+        print(f"\n{'═' * 60}", flush=True)
+        print(f"  TASK {idx + 1}/{len(task_ids)}: {task.title} ({task_id})", flush=True)
+        print(f"  Difficulty: {task.difficulty} | Max steps: {task.max_steps}", flush=True)
+        print(f"{'═' * 60}", flush=True)
         await broadcast({
             "type": "chat",
             "payload": {
@@ -1702,6 +1715,7 @@ async def orchestrate_scenario(req: OrchestrateRequest):
     """Zero-Click Orchestration: LLM parses intent and spins up sandbox."""
     prompt = _normalize_prompt_text(req.prompt)
     logger.info("POST /api/orchestrate -> prompt='%s'", prompt)
+    print(f"\n[swarm-os] ▶ Simulation triggered — running all OpenEnv tasks", flush=True)
 
     if OPENENV_FRONTEND_BRIDGE:
         clients = create_clients()
@@ -2643,6 +2657,9 @@ async def _finalize_orchestration(
         await _stop_telemetry_loop()
         _reset_frontend_replay_buffer()
         logger.info("Scenario '%s' marked complete — replay buffer cleared for clean refresh", scenario_id)
+        print(f"\n{'═' * 60}", flush=True)
+        print(f"  ALL TASKS COMPLETE — Scenario '{scenario_id}' finished", flush=True)
+        print(f"{'═' * 60}\n", flush=True)
     else:
         logger.info("Scenario '%s' task finished — more tasks remain, not emitting scenario_complete", scenario_id)
 
