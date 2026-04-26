@@ -146,10 +146,28 @@ export default function App() {
                   Multi-agent incident response with GRPO-trained Llama-3.
                   Click below to run all three OpenEnv tasks:
                 </p>
-                <div className="flex gap-2 mt-1">
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[11px] font-mono font-semibold">EASY · GPU OOM</span>
-                  <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[11px] font-mono font-semibold">MEDIUM · Schema Drift</span>
-                  <span className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 text-[11px] font-mono font-semibold">HARD · Canary Regression</span>
+                <div className="flex flex-col gap-1.5 mt-2 text-left max-w-md">
+                  <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 shrink-0 mt-0.5">EASY</span>
+                    <div>
+                      <span className="text-[11px] font-semibold text-emerald-300">Single-GPU OOM Triage</span>
+                      <p className="text-[9px] text-zinc-500 leading-tight">CUDA OOM on A10 GPU — audit, triage, propose memory-safe fix</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-400 shrink-0 mt-0.5">MED</span>
+                    <div>
+                      <span className="text-[11px] font-semibold text-amber-300">Analytics Schema Drift</span>
+                      <p className="text-[9px] text-zinc-500 leading-tight">Broken dashboards from upstream API rename — map, backfill, validate</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-500/20 text-red-400 shrink-0 mt-0.5">HARD</span>
+                    <div>
+                      <span className="text-[11px] font-semibold text-red-300">Canary Rollout Regression</span>
+                      <p className="text-[9px] text-zinc-500 leading-tight">p95 latency spike from canary deploy — rollback, communicate, close</p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <button
