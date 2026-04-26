@@ -84,6 +84,12 @@ export default function App() {
     orchestrate(DEFAULT_PROMPT);
   };
 
+  const handleCustomPromptRun = (promptText) => {
+    setOverlayDismissed(true);
+    setPendingPrompt(promptText);
+    orchestrate(promptText, { customOnly: true });
+  };
+
   const handleClearReset = () => {
     setOverlayDismissed(false);
   };
@@ -218,13 +224,13 @@ export default function App() {
 
               {/* Sample Custom Prompts */}
               <div className="w-full flex flex-col gap-1.5 text-left mt-2">
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Sample Custom Prompts</p>
+                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Sample Custom Prompts — click to run</p>
                 <div className="flex flex-col gap-2 max-h-[140px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                   {SAMPLE_PROMPT_DATA.map((sp, idx) => (
                     <div
                       key={idx}
                       className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0"
-                      onClick={() => { setPendingPrompt(sp.prompt); setOverlayDismissed(true); }}
+                      onClick={() => handleCustomPromptRun(sp.prompt)}
                     >
                       <span className="text-[10px] font-semibold text-zinc-300">{sp.title}</span>
                       <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"{sp.prompt.length > 100 ? sp.prompt.slice(0, 100) + '...' : sp.prompt}"</p>
