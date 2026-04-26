@@ -16,6 +16,7 @@ export default function EnterpriseChat() {
     ...Object.keys(taskViews || {}),
     ...(activeTask ? [activeTask] : []),
   ]);
+  const showTaskSwitcher = availableTasks.size > 1;
   const taskButtons = [
     { key: 'task_easy_gpu_oom', label: 'Easy' },
     { key: 'task_medium_schema_drift', label: 'Medium' },
@@ -69,29 +70,31 @@ export default function EnterpriseChat() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900/70 p-1">
-            {taskButtons.map((button) => {
-              const isSelected = selectedTaskView === button.key;
-              const isEnabled = availableTasks.has(button.key);
-              return (
-                <button
-                  key={button.key}
-                  type="button"
-                  disabled={!isEnabled}
-                  onClick={() => isEnabled && dispatch({ type: 'SELECT_TASK_VIEW', payload: button.key })}
-                  className={`px-2 py-1 rounded text-[10px] font-mono transition-colors ${
-                    isSelected
-                      ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30'
-                      : isEnabled
-                      ? 'bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700'
-                      : 'text-zinc-600 cursor-not-allowed'
-                  }`}
-                >
-                  {button.label}
-                </button>
-              );
-            })}
-          </div>
+          {showTaskSwitcher && (
+            <div className="flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900/70 p-1">
+              {taskButtons.map((button) => {
+                const isSelected = selectedTaskView === button.key;
+                const isEnabled = availableTasks.has(button.key);
+                return (
+                  <button
+                    key={button.key}
+                    type="button"
+                    disabled={!isEnabled}
+                    onClick={() => isEnabled && dispatch({ type: 'SELECT_TASK_VIEW', payload: button.key })}
+                    className={`px-2 py-1 rounded text-[10px] font-mono transition-colors ${
+                      isSelected
+                        ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30'
+                        : isEnabled
+                        ? 'bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700'
+                        : 'text-zinc-600 cursor-not-allowed'
+                    }`}
+                  >
+                    {button.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <TranslateToggle enabled={translateMode} onToggle={setTranslateMode} />
         </div>
       </div>
@@ -243,7 +246,9 @@ export default function EnterpriseChat() {
             <div className="px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-widest">Incident Summary</span>
-              <span className="ml-auto text-[9px] font-mono text-emerald-500/70">inference.py complete</span>
+              <span className="ml-auto text-[9px] font-mono text-emerald-500/70">
+                {scenarioContext?.source === 'inference_cli' ? 'inference.py complete' : 'Orchestration complete'}
+              </span>
             </div>
             <div className="px-4 py-3">
               <table className="w-full text-[10px]">

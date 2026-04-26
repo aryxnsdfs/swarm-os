@@ -1393,7 +1393,7 @@ async def _run_all_openenv_tasks(
         }
         logger.info("═══ Running task %d/%d: %s (%s) ═══", idx + 1, len(task_ids), task_id, task.title)
         print(f"\n{'═' * 60}", flush=True)
-        print(f"  TASK {idx + 1}/{len(task_ids)}: {task.title} ({task_id})", flush=True)
+        print(f"  TASK {idx + 1}/{len(task_ids)}: {commander_payload.get('title', task.title)} ({task_id})", flush=True)
         print(f"  Difficulty: {task.difficulty} | Max steps: {task.max_steps}", flush=True)
         print(f"{'═' * 60}", flush=True)
         await broadcast({
@@ -1435,6 +1435,12 @@ async def _run_openenv_frontend_scenario(
     parent_node = root_node_id
     scenario_id = _task_to_scenario_id(resolved_task_id)
 
+    # Print terminal banner for the single task
+    print(f"\n{'═' * 60}", flush=True)
+    print(f"  INCIDENT RUN: {commander_payload.get('title', task.title)}", flush=True)
+    print(f"  Task ID: {resolved_task_id} | Difficulty: {task.difficulty}", flush=True)
+    print(f"{'═' * 60}\n", flush=True)
+
     try:
         if not skip_reset:
             physics_engine.reset()
@@ -1445,6 +1451,10 @@ async def _run_openenv_frontend_scenario(
             await _stop_telemetry_loop()
 
         observation = env.reset(task_id=resolved_task_id, prompt=mission_prompt)
+        # Override the benchmark's default summary with the user's actual prompt
+        # so the LLM agents respect the custom constraints/context provided.
+        observation.incident_summary = mission_prompt
+        
         _sync_physics_from_openenv(observation)
         physics_engine.state["container_status"] = "running"
         physics_engine.state["cluster_status"] = "degraded"
@@ -1456,9 +1466,9 @@ async def _run_openenv_frontend_scenario(
                     "scenario_id": scenario_id,
                     "source": "backend_orchestrate",
                     "task_id": resolved_task_id,
-                    "title": task.title,
-                    "objective": task.objective,
-                    "incident_summary": task.incident_summary,
+                    "title": commander_payload.get("title", task.title),
+                    "objective": commander_payload.get("objective", task.objective),
+                    "incident_summary": commander_payload.get("incident_summary", task.incident_summary),
                     "mission_prompt": mission_prompt,
                     "validator_runtime": observation.validator_runtime,
                     "commander_payload": commander_payload,
@@ -1802,9 +1812,49 @@ async def dismiss_agent(req: AgentDismissRequest):
 @app.post("/api/orchestrate")
 async def orchestrate_scenario(req: OrchestrateRequest):
     """Zero-Click Orchestration: LLM parses intent and spins up sandbox."""
+    global scenario_task, training_task
+    
+    # 0. Immediate Cleanup: Stop any running tasks and clear the replay buffer
+    # so we don't leak events from a previous run into the new one.
+    await _stop_scenario_task()
+    await _stop_training_loop()
+    _reset_frontend_replay_buffer()
+
     prompt = _normalize_prompt_text(req.prompt)
     is_custom = req.custom_only
     logger.info("POST /api/orchestrate -> prompt='%s' custom_only=%s", prompt, is_custom)
+
+    low_lower = prompt.lower()
+    
+    # ── Extract budget_limit from prompt ──
+    budget_limit = None
+    budget_match = re.search(r'\$\s*(\d+(?:\.\d+)?)', prompt)
+    if not budget_match:
+        budget_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:dollar|usd|budget)', low_lower)
+    if budget_match:
+        budget_limit = float(budget_match.group(1))
+        logger.info("Orchestrator extracted budget_limit=$%.2f from prompt", budget_limit)
+    
+    # ── Extract sla_limit from prompt ──
+    sla_limit = None
+    sla_match = re.search(r'(\d+)\s*(?:second|sec|s)\s*(?:sla|window|limit|constraint|timeout)', low_lower)
+    if not sla_match:
+        sla_match = re.search(r'sla\s*(?:of|:|=|limit)?\s*(\d+)\s*(?:second|sec|s)?', low_lower)
+    if sla_match:
+        sla_limit = int(sla_match.group(1))
+        logger.info("Orchestrator extracted sla_limit=%ds from prompt", sla_limit)
+    
+    # ── Apply constraints to the Physics Engine ──
+    if budget_limit is not None:
+        physics_engine.budget_remaining = budget_limit
+    if sla_limit is not None:
+        physics_engine.sla_remaining = sla_limit
+    
+    # ── Extract vram_limit from prompt ──
+    vram_limit = _extract_vram_limit(prompt)
+    if vram_limit:
+        physics_engine.state["vram_limit"] = vram_limit
+        logger.info("Orchestrator extracted vram_limit=%s from prompt", vram_limit)
 
     if OPENENV_FRONTEND_BRIDGE:
         clients = create_clients()
@@ -1842,18 +1892,19 @@ async def orchestrate_scenario(req: OrchestrateRequest):
                 "title": f"Custom: {prompt[:60]}{'...' if len(prompt) > 60 else ''}",
                 "objective": prompt,
                 "incident_type": incident_type_label,
+                "incident_summary": prompt, # Use custom prompt as the summary for the LLM
+                "target_vram_limit": vram_limit,
                 "validator_runtime": validator_preview,
                 "provider": detect_provider() or "none",
                 "provider_chain": available_provider_names(),
                 "model": MODEL_NAME,
                 "custom_prompt": True,
             }
+            if budget_limit: commander_payload["budget_limit"] = budget_limit
+            if sla_limit: commander_payload["sla_limit"] = sla_limit
             print(f"\n[swarm-os] \u25b6 Custom prompt triggered — single task mode ({resolved_task_id})", flush=True)
             await broadcast({"type": "tasks_queued", "payload": {"task_ids": [resolved_task_id]}})
 
-            await _stop_scenario_task()
-            await _stop_training_loop()
-            global scenario_task
             scenario_task = asyncio.create_task(
                 _run_openenv_frontend_scenario(
                     prompt=prompt,
@@ -1890,8 +1941,6 @@ async def orchestrate_scenario(req: OrchestrateRequest):
             "model": MODEL_NAME,
         }
 
-        await _stop_scenario_task()
-        await _stop_training_loop()
         scenario_task = asyncio.create_task(
             _run_all_openenv_tasks(
                 prompt=prompt,
