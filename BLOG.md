@@ -495,13 +495,13 @@ This architecture means Swarm-OS can coordinate an investigation that looks like
 | OpenEnv (latest release) | PASS | Built on OpenEnv 0.2.3, implements `MCPEnvironment` and `Rubric` base classes |
 | Working training script (Unsloth / TRL) | PASS | [Colab notebook](https://colab.research.google.com/drive/15XLbHBzBZJCZIqS_8PqZDFSuhUmOe1bv?usp=sharing) — runs end-to-end on Kaggle T4 |
 | Evidence of training (loss + reward plots) | PASS | Figures 1 and 2 embedded above; `reward_log.jsonl` and `training_summary.json` in repository |
-| Mini-blog or 2-min video | PASS | This blog; YouTube pitch linked below |
+| Mini-blog or 2-min video | PASS | This blog post |
 | Environment hosted on HuggingFace Spaces | PASS | HF Space URL in submission resources |
 | README motivates the problem and shows results | PASS | Full README in repository |
 | README links to HF Space and all materials | PASS | Submission resources table in README |
-| No large video files in repo | PASS | All video content is URL-referenced |
+| No large video files in repo | PASS | Repository contains only code, configs, and training plots |
 | Valid `openenv.yaml` manifest | PASS | Included in repository root |
-| Gym-style API (`reset`, `step`, `state`) | PASS | Implemented in `environment/server.py` |
+| Gym-style API (`reset`, `step`, `state`) | PASS | Implemented in `swarm_openenv_env/environment.py` |
 | Plots labeled with axes and units | PASS | Both figures have labeled X/Y axes with units |
 | Plots committed as `.png` | PASS | `swarm_os_reward_curve.png`, `swarm_os_policy_curve.png` |
 | Plots embedded in README with captions | PASS | Figures 1 and 2 in README with explanatory captions |
@@ -514,6 +514,21 @@ This architecture means Swarm-OS can coordinate an investigation that looks like
 ## The Result in One Sentence
 
 We trained a language model to stop apologizing and start engineering — and then we proved it works by watching it save $238.48 in ten seconds, with a timestamped audit trail, a hardware-verified fix, and a root cause analysis generated automatically for the post-incident review.
+
+---
+
+## How to Use the Live Demo
+
+1. **Open the Space** — Go to [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os) and wait for it to finish building.
+2. **Click "Start Simulation"** — A centered overlay button appears on the dashboard. Click it to launch the full OpenEnv simulation across all three incidents (Easy, Medium, Hard).
+3. **Watch the agents work** — The AI Chat panel shows live multi-agent communication. The left panel shows sandbox telemetry. The right panel builds the Root Cause Analysis and Counterfactual Analysis in real time.
+4. **Check the Logs** — Click the "Logs" tab in the HF Space header to see the full `inference.py` terminal output.
+
+## Running a Fully Local Model in the Cloud
+
+> **The entire system — the 4.9GB GGUF model, the inference engine, the React dashboard, and the FastAPI orchestrator — runs inside a single Hugging Face Docker Space with zero external API calls.**
+
+At cold boot, `start.sh` dynamically pulls the trained GGUF model into persistent storage, spins up an air-gapped `llama-cpp-python` OpenAI-compatible server, and boots the FastAPI orchestrator serving the compiled React dashboard on a single port. Zero CORS issues, zero Docker-in-Docker collisions, zero external API calls. Every LLM inference stays inside the container — the model weights, prompts, and responses never leave the machine.
 
 ---
 
@@ -536,6 +551,7 @@ We trained a language model to stop apologizing and start engineering — and th
 | Policy Curve (KL Divergence) | [`swarm_os_policy_curve.png`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/swarm_os_policy_curve.png) |
 | Reward Curve | [`swarm_os_reward_curve.png`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/swarm_os_reward_curve.png) |
 | Blog Post | [`BLOG.md`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/BLOG.md) |
+| README | [`README.md`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/README.md) |
 
 ---
 

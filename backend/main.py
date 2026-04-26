@@ -1344,6 +1344,8 @@ async def _run_openenv_frontend_scenario(
 
         observation = env.reset(task_id=resolved_task_id, prompt=mission_prompt)
         _sync_physics_from_openenv(observation)
+        physics_engine.state["container_status"] = "running"
+        physics_engine.state["cluster_status"] = "degraded"
 
         await broadcast(
             {
@@ -1490,6 +1492,8 @@ async def _run_openenv_frontend_scenario(
 
         final_score = float(env.state.current_score) if hasattr(env.state, "current_score") else (all_rewards[-1] if all_rewards else 0.0)
         final_success = observation.done and final_score >= task.success_threshold
+        physics_engine.state["container_status"] = "stable" if final_success else "warning"
+        physics_engine.state["cluster_status"] = "healthy" if final_success else "degraded"
         log_end(
             success=final_success,
             steps=step_index + 1,

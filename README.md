@@ -35,6 +35,32 @@ suggested_hardware: t4-small
 | Policy Curve (KL Divergence) | [`swarm_os_policy_curve.png`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/swarm_os_policy_curve.png) |
 | Reward Curve | [`swarm_os_reward_curve.png`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/swarm_os_reward_curve.png) |
 | Blog Post | [`BLOG.md`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/BLOG.md) |
+| README | [`README.md`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/README.md) |
+
+---
+
+## How to Use the Live Demo
+
+1. **Open the Space** — Navigate to [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os). Wait for the Space to finish building (the status indicator in the top-right will show "Running").
+2. **Click "Start Simulation"** — A centered overlay button will appear on the dashboard. Click it to launch the full OpenEnv simulation.
+3. **Watch the agents work** — The AI Chat panel (center) shows real-time multi-agent communication. The left panel displays live sandbox telemetry (VRAM, CPU, RAM). The right panel builds the Root Cause Analysis and Counterfactual Analysis as the agents progress.
+4. **All three tasks run automatically** — The simulation runs three incidents sequentially: Easy (GPU OOM), Medium (Schema Drift), and Hard (Canary Regression). Each task shows agent reasoning, code proposals, and validator results in real time.
+5. **Check the Logs** — Click the "Logs" tab in the HF Space header to see the full `inference.py` terminal output with per-step rewards, telemetry, and the final FinOps summary.
+
+---
+
+## Running a Fully Local Model in the Cloud
+
+> **This entire system — the 4.9GB GGUF model, the inference engine, the React dashboard, and the FastAPI orchestrator — runs inside a single Hugging Face Docker Space with zero external API calls.**
+
+Deploying a complex UI, a Python backend, and a 6GB local LLM to the cloud usually requires complex, multi-server orchestration. We engineered Swarm-OS to run entirely inside a **single Hugging Face Docker Space**.
+
+At cold boot, a custom `start.sh` script:
+1. **Dynamically pulls the 4.9GB GGUF model** from persistent storage using `huggingface_hub.hf_hub_download`
+2. **Spins up an air-gapped `llama-cpp-python` OpenAI-compatible server** on `127.0.0.1:1234` — fully isolated, no data leaves the container
+3. **Boots the FastAPI orchestrator** which serves the compiled React dashboard on a single port (7860)
+
+**Zero CORS issues. Zero Docker-in-Docker collisions. Zero external API calls.** The Space sleeps automatically to conserve cloud credits. Every single LLM inference call stays inside the container — the model weights, the prompt, and the response never leave the machine. This proves Swarm-OS can operate in an enterprise air-gapped environment where data sovereignty is a hard requirement.
 
 ---
 
@@ -54,16 +80,18 @@ By leveraging:
 
 ## Table of Contents
 
-1. [The Narrative and Problem Statement](#part-i-the-narrative-and-problem-statement)
-2. [Training Architecture and Infrastructure](#part-ii-the-training-architecture-and-infrastructure)
-3. [The Synthesized Adversarial Curriculum](#part-iii-the-synthesized-adversarial-curriculum-120-prompts)
-4. [The Evolutionary Engine (GRPO) and Heuristic Oracle](#part-iv-the-evolutionary-engine-grpo-and-heuristic-oracle)
-5. [Deep Telemetry and Observable Evidence of Learning](#part-v-deep-telemetry-and-observable-evidence-of-learning)
-6. [The Monolithic Export (Local Autonomy)](#part-vi-the-monolithic-export-local-autonomy)
-7. [Hackathon Compliance Checklist](#hackathon-compliance-checklist)
-8. [Quick Start](#quick-start)
-9. [Tech Stack](#tech-stack)
-10. [OpenEnv Backend: Technical Reference](#openenv-backend-technical-reference)
+1. [How to Use the Live Demo](#how-to-use-the-live-demo)
+2. [Running a Fully Local Model in the Cloud](#running-a-fully-local-model-in-the-cloud)
+3. [The Narrative and Problem Statement](#part-i-the-narrative-and-problem-statement)
+4. [Training Architecture and Infrastructure](#part-ii-the-training-architecture-and-infrastructure)
+5. [The Synthesized Adversarial Curriculum](#part-iii-the-synthesized-adversarial-curriculum-120-prompts)
+6. [The Evolutionary Engine (GRPO) and Heuristic Oracle](#part-iv-the-evolutionary-engine-grpo-and-heuristic-oracle)
+7. [Deep Telemetry and Observable Evidence of Learning](#part-v-deep-telemetry-and-observable-evidence-of-learning)
+8. [The Monolithic Export (Local Autonomy)](#part-vi-the-monolithic-export-local-autonomy)
+9. [Hackathon Compliance Checklist](#hackathon-compliance-checklist)
+10. [Quick Start](#quick-start)
+11. [Tech Stack](#tech-stack)
+12. [OpenEnv Backend: Technical Reference](#openenv-backend-technical-reference)
 
 ---
 
@@ -671,11 +699,11 @@ Generated files: ['/tmp/grpo_gguf_export_gguf/Llama-3.1-8B-Instruct.Q4_K_M.gguf'
 | Use OpenEnv (latest release) | PASS | Built on OpenEnv 0.2.3, implements `openenv.core.rubrics.base.Rubric` |
 | Working training script (Unsloth/TRL) | PASS | Full Kaggle notebook — link in Submission Resources above |
 | Evidence of training (loss + reward plots) | PASS | Figures 1 and 2 embedded above; `reward_log.jsonl` + `training_summary.json` committed |
-| Short writeup / 2-min video | PASS | YouTube pitch linked above |
-| Push environment to HF Space | PASS | HF Space URL linked above |
+| Short writeup / 2-min video | PASS | This README + [`BLOG.md`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/BLOG.md) |
+| Push environment to HF Space | PASS | [Live HF Space](https://huggingface.co/spaces/aryxn323/swarm-os) |
 | README motivates problem and shows results | PASS | This document |
 | README links to HF Space and all materials | PASS | Submission Resources table at top |
-| No large video files in repo | PASS | Video is URL-referenced only |
+| No large video files in repo | PASS | Repository contains only code, configs, and training plots |
 | Valid `openenv.yaml` manifest | PASS | Included in root |
 | Gymnasium API (`reset`, `step`, `state`) | PASS | Implemented in environment |
 | Plot axes labeled with units | PASS | Both figures have labeled X/Y axes |
@@ -778,15 +806,22 @@ launch is mocked, which is unchanged from the local behavior.
 #### One-time Space creation
 
 ```bash
-# From the repo root, after pushing this branch to GitHub
+# 1. Login to Hugging Face CLI
 huggingface-cli login
-huggingface-cli repo create <your-username>/swarm-os --type space --space_sdk docker
-git remote add space https://huggingface.co/spaces/<your-username>/swarm-os
+
+# 2. Create the Space (already done for this submission)
+huggingface-cli repo create aryxn323/swarm-os --type space --space_sdk docker
+
+# 3. Add the Space as a git remote
+git remote add space https://huggingface.co/spaces/aryxn323/swarm-os
+
+# 4. Push the codebase
 git push space HEAD:main
-# Then in the HF UI:
-#   Settings → Variables and secrets → add the 6 secrets above
-#   Settings → Hardware → t4-small (or a10g-small for faster inference)
-#   Settings → Persistent storage → 20 GB (so /data caches the GGUF)
+
+# 5. Configure the Space in the HF UI:
+#   Settings → Variables and secrets → add the 6 secrets listed above
+#   Settings → Hardware → t4-small (T4 GPU with 16GB VRAM)
+#   Settings → Persistent storage → 20 GB (caches the GGUF model across restarts)
 ```
 
 #### Local development is unaffected

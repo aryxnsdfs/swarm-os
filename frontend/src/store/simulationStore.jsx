@@ -166,6 +166,51 @@ function simulationReducer(state, action) {
         selectedTaskView: state.selectedTaskView,
       };
     }
+    case "CONTINUE_OR_START": {
+      if (state.isRunning) {
+        return persistCurrentTaskView(
+          { ...state, scenarioContext: action.payload, scenarioComplete: false },
+          action.payload?.task_id,
+        );
+      }
+      const preservedViews2 = { ...state.taskViews };
+      const curTaskId2 = state.scenarioContext?.task_id;
+      if (curTaskId2) preservedViews2[curTaskId2] = snapshotTaskState(state);
+      return {
+        ...state,
+        isRunning: true,
+        isPaused: false,
+        scenarioComplete: false,
+        messages: [],
+        causalNodes: [],
+        causalEdges: [],
+        gitCommits: [],
+        rewardFeed: [],
+        totalReward: 0,
+        spent: 0,
+        elapsedMs: 0,
+        slaRemaining: 600,
+        liveEpisode: 0,
+        rewardHistory: [{ episode: 0, reward: 0 }],
+        trainingPhase: 1,
+        trainingComplete: false,
+        trainingMathLogs: [],
+        rejectedRun: null,
+        chosenRun: null,
+        fpsrData: [],
+        compressionData: [],
+        rcaDocument: null,
+        telemetry: initialState.telemetry,
+        validatorRuntime: null,
+        lastValidatorResult: null,
+        scenarioContext: action.payload,
+        activeAgents: [],
+        counterfactual: null,
+        reasoningTrace: [],
+        taskViews: preservedViews2,
+        selectedTaskView: action.payload?.task_id || state.selectedTaskView,
+      };
+    }
     case "CLEAR_SIMULATION":
       return resetState(state);
     case "SELECT_TASK_VIEW": {
@@ -323,12 +368,10 @@ function simulationReducer(state, action) {
       const tickMs = action.payload * state.speed;
       const newElapsed = state.elapsedMs + tickMs;
       const newSla = Math.max(0, state.slaRemaining - tickMs / 1000);
-      const newSpent = state.spent + (state.burnRate * tickMs) / 3600000;
       return {
         ...state,
         elapsedMs: newElapsed,
         slaRemaining: newSla,
-        spent: newSpent,
       };
     }
     case "ADD_MESSAGE": {
@@ -744,8 +787,7 @@ export function SimulationProvider({ children }) {
             } else if (msg.type === "reward") {
               dispatch({ type: "ADD_REWARD", payload: msg.payload });
             } else if (msg.type === "scenario_started") {
-              dispatch({ type: "START_SIMULATION" });
-              dispatch({ type: "SET_SCENARIO_CONTEXT", payload: msg.payload });
+              dispatch({ type: "CONTINUE_OR_START", payload: msg.payload });
             } else if (msg.type === "tasks_queued") {
               dispatch({ type: "QUEUE_TASKS", payload: msg.payload.task_ids });
             }

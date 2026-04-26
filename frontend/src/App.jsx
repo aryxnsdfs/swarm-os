@@ -170,9 +170,9 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="h-full p-2 flex flex-col gap-2"
             >
-              <div className="flex-1 min-h-0 flex gap-2">
-                <div className="w-[280px] xl:w-[320px] shrink-0 flex flex-col gap-2 overflow-hidden">
-                  <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+              <div className="flex-1 min-h-0 flex gap-2 overflow-hidden">
+                <div className="w-[280px] xl:w-[320px] shrink-0 flex flex-col gap-2 min-h-0">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                     <DockerPhysicsMonitor />
                   </div>
                   {showPrompt && (
@@ -182,17 +182,16 @@ export default function App() {
                   )}
                 </div>
 
-                <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-hidden">
-                  <div className="flex-1 min-h-0">
+                <div className="flex-1 flex flex-col gap-2 min-w-0 min-h-0 overflow-hidden">
+                  <div className="flex-[3] min-h-0 overflow-hidden">
                     <EnterpriseChat />
                   </div>
-                  <div className="h-[250px] shrink-0 overflow-hidden">
+                  <div className="flex-[1] min-h-[180px] max-h-[250px] shrink-0 overflow-hidden">
                     <CausalDAG />
                   </div>
                 </div>
 
-                {/* Consolidated Right Column with Single Scrollbar */}
-                <div className="w-[380px] xl:w-[430px] shrink-0 flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent pr-1">
+                <div className="w-[380px] xl:w-[430px] shrink-0 flex flex-col gap-2 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent pr-1">
                   <div className="shrink-0">
                     <GitRCAPanel />
                   </div>
