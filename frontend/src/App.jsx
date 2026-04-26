@@ -141,7 +141,7 @@ export default function App() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="relative z-10 flex flex-col items-center gap-4 px-8 py-7 rounded-2xl border border-zinc-700/50 bg-zinc-900/85 shadow-2xl w-[520px] max-w-[95vw]"
+              className="relative z-10 flex flex-col items-center gap-4 px-8 py-7 rounded-2xl border border-zinc-700/50 bg-zinc-900/85 shadow-2xl w-[520px] max-w-[95vw] max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
             >
               {/* Logo + title */}
               <div className="flex items-center gap-3">
@@ -207,20 +207,20 @@ export default function App() {
               {/* Sample Custom Prompts */}
               <div className="w-full flex flex-col gap-1.5 text-left mt-2">
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Sample Custom Prompts</p>
-                <div className="flex flex-col gap-2">
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                <div className="flex flex-col gap-2 max-h-[140px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
                     <span className="text-[10px] font-semibold text-zinc-300">1. The VRAM "Tight-Squeeze" Challenge</span>
                     <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"Our batch size is fixed at 32 for the SLA, but we only have 512MB of VRAM left. Layer 12 is hitting an OOM. Optimize the memory footprint..."</p>
                   </div>
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
                     <span className="text-[10px] font-semibold text-zinc-300">2. The Multi-GPU Hallucination Test</span>
                     <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"The training job is failing on a single T4. Can we enable FSDP or move to a multi-node cluster to resolve the memory bottleneck?"</p>
                   </div>
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
                     <span className="text-[10px] font-semibold text-zinc-300">3. The FinOps Budget Crisis</span>
                     <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"We are at $49.50 of our $50.00 budget. The incident is still active. Write a minimal-cost remediation..."</p>
                   </div>
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
                     <span className="text-[10px] font-semibold text-zinc-300">4. The "Black-Box" Investigation</span>
                     <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"A custom CUDA kernel is leaking memory in the validation loop. We can't see the kernel code, but we have the telemetry logs..."</p>
                   </div>
