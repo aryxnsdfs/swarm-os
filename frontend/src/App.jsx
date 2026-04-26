@@ -196,6 +196,36 @@ export default function App() {
               >
                 Start inference.py
               </button>
+              
+              <button
+                onClick={() => setOverlayDismissed(true)}
+                className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold transition-all mt-1"
+              >
+                Use the custom prompt
+              </button>
+
+              {/* Sample Custom Prompts */}
+              <div className="w-full flex flex-col gap-1.5 text-left mt-2">
+                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Sample Custom Prompts</p>
+                <div className="flex flex-col gap-2">
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                    <span className="text-[10px] font-semibold text-zinc-300">1. The VRAM "Tight-Squeeze" Challenge</span>
+                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"Our batch size is fixed at 32 for the SLA, but we only have 512MB of VRAM left. Layer 12 is hitting an OOM. Optimize the memory footprint..."</p>
+                  </div>
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                    <span className="text-[10px] font-semibold text-zinc-300">2. The Multi-GPU Hallucination Test</span>
+                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"The training job is failing on a single T4. Can we enable FSDP or move to a multi-node cluster to resolve the memory bottleneck?"</p>
+                  </div>
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                    <span className="text-[10px] font-semibold text-zinc-300">3. The FinOps Budget Crisis</span>
+                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"We are at $49.50 of our $50.00 budget. The incident is still active. Write a minimal-cost remediation..."</p>
+                  </div>
+                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors" onClick={() => { setOverlayDismissed(true); }}>
+                    <span className="text-[10px] font-semibold text-zinc-300">4. The "Black-Box" Investigation</span>
+                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"A custom CUDA kernel is leaking memory in the validation loop. We can't see the kernel code, but we have the telemetry logs..."</p>
+                  </div>
+                </div>
+              </div>
               <p className="text-[9px] text-zinc-600 text-center">All three incidents run sequentially · Results shown live · Logs in HF Space → Logs tab</p>
             </motion.div>
           </motion.div>
