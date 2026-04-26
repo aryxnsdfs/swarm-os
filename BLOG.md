@@ -520,7 +520,7 @@ We trained a language model to stop apologizing and start engineering — and th
 ## How to Use the Live Demo
 
 1. **Open the Space** — Go to [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os) and wait for it to finish building.
-2. **Click "Start Simulation"** — A centered overlay button appears on the dashboard. Click it to launch the full OpenEnv simulation across all three incidents (Easy, Medium, Hard).
+2. **Click "Start inference.py"** — A centered overlay button appears on the dashboard. Click it to launch the full OpenEnv simulation across all three incidents (Easy, Medium, Hard).
 3. **Watch the agents work** — The AI Chat panel shows live multi-agent communication. The left panel shows sandbox telemetry. The right panel builds the Root Cause Analysis and Counterfactual Analysis in real time.
 4. **Check the Logs** — Click the "Logs" tab in the HF Space header to see the full `inference.py` terminal output.
 
@@ -533,7 +533,7 @@ This is a complete map of what every panel on the dashboard means and what every
 | Panel | What It Represents |
 |---|---|
 | **Header (FinOps Bar)** | Live SLA timer (counting down from 600s), budget bar (`$/$50.000`), active agent badges, validator runtime label, active model name. |
-| **Start Simulation Overlay** | Blurred backdrop with a centered button — clicking it sends `POST /api/orchestrate` to the FastAPI backend and starts the three-task run. Reappears after "Clear". |
+| **Start inference.py Overlay** | Blurred backdrop with a centered "Start inference.py" button — clicking it sends `POST /api/orchestrate` to the FastAPI backend and starts the three-task run. Reappears after "Clear". |
 | **Live Sandbox Telemetry** | Real-time VRAM, RAM, CPU, network from the OpenEnv physics engine. Container status (`idle` → `running` → `stable`/`warning`) and cluster health. |
 | **AI Chat (Multi-Agent)** | Live M2M conversation: `COMMANDER`, `DETECTIVE`, `CODER`, `MANAGER`, `EVALUATOR`, `DBA_AGENT`, `SRE_AGENT`, `SECURITY_AGENT`, `COMPLIANCE_AGENT`. Each message has expandable `<think>` reasoning and a per-step reward delta. |
 | **Causal DAG** | Live Directed Acyclic Graph of the incident, built from `new_causal_event` WebSocket frames. |

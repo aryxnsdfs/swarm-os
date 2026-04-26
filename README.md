@@ -41,7 +41,7 @@ suggested_hardware: t4-small
 ## How to Use the Live Demo
 
 1. **Open the Space** — Navigate to [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os). Wait for the Space to finish building (the status indicator in the top-right will show "Running").
-2. **Click "Start Simulation"** — A centered overlay button will appear on the dashboard. Click it to launch the full OpenEnv simulation.
+2. **Click "Start inference.py"** — A centered overlay button will appear on the dashboard. Click it to launch the full OpenEnv simulation.
 3. **Watch the agents work** — The AI Chat panel (center) shows real-time multi-agent communication. The left panel displays live sandbox telemetry (VRAM, CPU, RAM). The right panel builds the Root Cause Analysis and Counterfactual Analysis as the agents progress.
 4. **All three tasks run automatically** — The simulation runs three incidents sequentially: Easy (GPU OOM), Medium (Schema Drift), and Hard (Canary Regression). Each task shows agent reasoning, code proposals, and validator results in real time.
 5. **Check the Logs** — Click the "Logs" tab in the HF Space header to see the full `inference.py` terminal output with per-step rewards, telemetry, and the final FinOps summary.
@@ -58,7 +58,7 @@ This section is a complete map of every panel on the dashboard and every log lin
 |---|---|---|
 | **Header (FinOps Bar)** | Top of screen | Live SLA timer (counting down from 600s), budget bar (`$0.000 / $50.000`), active agent badges, validator runtime label, and active model name. Updates every WebSocket frame. |
 | **Tab Bar** | Below header | Switches between **Live Environment** (default) and **Training Proof** (RewardCurve + before/after split). |
-| **Start Simulation Overlay** | Full-screen modal on load | Blurred backdrop with a centered "Start Simulation" button. Clicking it sends `POST /api/orchestrate` with the default prompt to begin the three-task simulation. Re-appears when the user clicks "Clear". |
+| **Start inference.py Overlay** | Full-screen modal on load | Blurred backdrop with a centered "Start inference.py" button. Clicking it sends `POST /api/orchestrate` with the default prompt to begin the three-task simulation. Re-appears when the user clicks "Clear". |
 | **Live Sandbox Telemetry** (`DockerPhysicsMonitor`) | Left column | Real-time VRAM, RAM, CPU, network usage from the OpenEnv physics engine. Container status (`idle` → `running` → `stable`/`warning`) and cluster health (`healthy` / `degraded`) are pushed via the `telemetry` WebSocket event. |
 | **Command Prompt** (`CommandPrompt`) | Left column (when idle) | Allows custom prompts to be submitted instead of the default. Hidden during active runs. |
 | **AI Chat (Multi-Agent)** (`EnterpriseChat`) | Center column | The live multi-agent conversation. Each row shows: agent role (COMMANDER, DETECTIVE, CODER, MANAGER, EVALUATOR, DBA_AGENT, SRE_AGENT, SECURITY_AGENT, COMPLIANCE_AGENT), M2M syntax message (e.g. `IMPL_FP16 \| ETA_15s`), expandable `<think>` reasoning, and the per-step reward delta. Tabs at the top let you switch between the three task views (Easy / Medium / Hard). |
@@ -985,7 +985,7 @@ swarm-os/
 │       └── orchestrator.py               # Multi-agent spawning and VRAM gating
 ├── frontend/                             # React dashboard
 │   ├── src/
-│   │   ├── App.jsx                       # Main layout + Start Simulation overlay
+│   │   ├── App.jsx                       # Main layout + Start inference.py overlay
 │   │   ├── store/simulationStore.jsx     # Zustand state management
 │   │   ├── hooks/useSimulation.js        # WebSocket + orchestration hook
 │   │   └── components/
