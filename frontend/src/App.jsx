@@ -144,8 +144,13 @@ export default function App() {
                 <h2 className="text-2xl font-bold text-zinc-100 mb-2">FrontierLabs Swarm-OS</h2>
                 <p className="text-sm text-zinc-400 leading-relaxed max-w-sm">
                   Multi-agent incident response with GRPO-trained Llama-3.
-                  Click below to launch a live OpenEnv simulation.
+                  Click below to run all three OpenEnv tasks:
                 </p>
+                <div className="flex gap-2 mt-1">
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[11px] font-mono font-semibold">EASY · GPU OOM</span>
+                  <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[11px] font-mono font-semibold">MEDIUM · Schema Drift</span>
+                  <span className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 text-[11px] font-mono font-semibold">HARD · Canary Regression</span>
+                </div>
               </div>
               <button
                 onClick={handleStartSimulation}
