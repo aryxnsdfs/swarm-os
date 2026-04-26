@@ -238,31 +238,50 @@ export default function EnterpriseChat() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="mt-3 rounded-md border border-zinc-700 bg-zinc-900/80 font-mono text-[10px]"
+            className="mt-3 rounded-lg border border-emerald-500/30 bg-gradient-to-b from-emerald-950/40 to-zinc-900/80 overflow-hidden"
           >
-            <div className="px-3 py-2 border-b border-zinc-800 text-center text-zinc-500 tracking-widest text-[9px]">
-              {'═'.repeat(40)} INCIDENT SUMMARY {'═'.repeat(40)}
+            <div className="px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-widest">Incident Summary</span>
+              <span className="ml-auto text-[9px] font-mono text-emerald-500/70">inference.py complete</span>
             </div>
-            <div className="px-4 py-2.5 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Success</span>
-                <span className="text-emerald-400 font-bold">true</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Steps</span>
-                <span className="text-zinc-300">{messages.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Final Score</span>
-                <span className="text-emerald-400 font-bold">{totalReward.toFixed(3)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Rewards</span>
-                <span className="text-zinc-300">{rewardFeed.map((r) => r.value.toFixed(2)).join(', ') || '—'}</span>
-              </div>
-            </div>
-            <div className="px-3 py-1.5 border-t border-zinc-800 text-center text-zinc-600 tracking-widest text-[9px]">
-              {'═'.repeat(90)}
+            <div className="px-4 py-3">
+              <table className="w-full text-[10px]">
+                <tbody>
+                  <tr className="border-b border-zinc-800/50">
+                    <td className="py-1.5 text-zinc-500 font-medium w-28">Status</td>
+                    <td className="py-1.5"><span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[9px]">RESOLVED</span></td>
+                  </tr>
+                  <tr className="border-b border-zinc-800/50">
+                    <td className="py-1.5 text-zinc-500 font-medium">Steps Taken</td>
+                    <td className="py-1.5 text-zinc-300 font-mono">{messages.length}</td>
+                  </tr>
+                  <tr className="border-b border-zinc-800/50">
+                    <td className="py-1.5 text-zinc-500 font-medium">Final Score</td>
+                    <td className="py-1.5 text-emerald-400 font-bold font-mono">{totalReward.toFixed(3)}</td>
+                  </tr>
+                  <tr className="border-b border-zinc-800/50">
+                    <td className="py-1.5 text-zinc-500 font-medium">AI Cost</td>
+                    <td className="py-1.5 text-zinc-300 font-mono">${spent.toFixed(4)}</td>
+                  </tr>
+                  <tr className="border-b border-zinc-800/50">
+                    <td className="py-1.5 text-zinc-500 font-medium">Budget Left</td>
+                    <td className="py-1.5 text-zinc-300 font-mono">${(budget - spent).toFixed(3)}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 text-zinc-500 font-medium align-top">Rewards</td>
+                    <td className="py-1.5 font-mono text-[9px] leading-relaxed">
+                      <div className="flex flex-wrap gap-1">
+                        {rewardFeed.length > 0 ? rewardFeed.map((r, i) => (
+                          <span key={i} className={`px-1 py-0.5 rounded ${r.value >= 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                            {r.value >= 0 ? '+' : ''}{r.value.toFixed(2)}
+                          </span>
+                        )) : <span className="text-zinc-600">—</span>}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </motion.div>
         )}

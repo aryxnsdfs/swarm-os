@@ -96,4 +96,4 @@ done
 # ----- 4. Boot the FastAPI dashboard (serves React + /ws + /api/*) -----
 echo "[start.sh] starting backend uvicorn on 0.0.0.0:${PORT}"
 cd /app/backend
-exec uvicorn main:app --host 0.0.0.0 --port "${PORT}" --log-level info
+exec python -u -m uvicorn main:app --host 0.0.0.0 --port "${PORT}" --log-level info
