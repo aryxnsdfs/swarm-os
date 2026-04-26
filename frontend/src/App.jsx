@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "./components/Layout/Header";
 import TabBar from "./components/Layout/TabBar";
@@ -68,6 +68,12 @@ export default function App() {
   const handleClearReset = () => {
     setOverlayDismissed(false);
   };
+
+  useEffect(() => {
+    const resetOverlay = () => setOverlayDismissed(false);
+    window.addEventListener("swarm-os:sleep-reset", resetOverlay);
+    return () => window.removeEventListener("swarm-os:sleep-reset", resetOverlay);
+  }, []);
 
   // Direct route detection for isolated dashboard views
   const isTrainingPage = window.location.pathname === "/training-proof";

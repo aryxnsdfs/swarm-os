@@ -719,6 +719,7 @@ export function SimulationProvider({ children }) {
   useEffect(() => {
     let ws = null;
     let reconnectTimer = null;
+    let sleepResetTimer = null;
     let retryDelay = 1000;
     let destroyed = false;
 
@@ -732,6 +733,10 @@ export function SimulationProvider({ children }) {
         ws.onopen = () => {
           console.log(`[SimulationProvider] WebSocket Connected to ${wsUrl}`);
           retryDelay = 1000;
+          if (sleepResetTimer) {
+            clearTimeout(sleepResetTimer);
+            sleepResetTimer = null;
+          }
         };
 
         ws.onmessage = (event) => {
@@ -819,6 +824,16 @@ export function SimulationProvider({ children }) {
             console.warn(
               `[SimulationProvider] WebSocket Closed (${e.code}). Reconnecting in ${retryDelay}ms...`,
             );
+            if (!sleepResetTimer) {
+              sleepResetTimer = setTimeout(() => {
+                console.warn("[SimulationProvider] Backend unavailable long enough to treat as Space sleep. Clearing stale UI.");
+                dispatch({ type: "CLEAR_SIMULATION" });
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("swarm-os:sleep-reset"));
+                }
+                sleepResetTimer = null;
+              }, 12000);
+            }
             reconnectTimer = setTimeout(() => {
               retryDelay = Math.min(retryDelay * 1.5, 8000);
               connect();
@@ -849,6 +864,7 @@ export function SimulationProvider({ children }) {
       console.log("[SimulationProvider] Cleaning up WebSocket...");
       destroyed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (sleepResetTimer) clearTimeout(sleepResetTimer);
       if (ws)
         try {
           ws.close();
