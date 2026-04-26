@@ -590,8 +590,6 @@ At cold boot, `start.sh` dynamically pulls the trained GGUF model into persisten
 | Trained Model (GGUF) | [aryxn323/meta_hackthon_2010_2026](https://huggingface.co/aryxn323/meta_hackthon_2010_2026) |
 | Manifest File | [`openenv.yaml`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/openenv.yaml) |
 | Inference Engine | [`inference.py`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/inference.py) |
-| Training Script (Kaggle) | [`kaggle_training_notebook.py`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/kaggle_training_notebook.py) |
-| Training Visualization | [`kaggle_visualize_training.py`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/kaggle_visualize_training.py) |
 | Reward Telemetry Log | [`reward_log.jsonl`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/reward_log.jsonl) |
 | Training Summary | [`training_summary.json`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/training_summary.json) |
 | Policy Curve (KL Divergence) | [`swarm_os_policy_curve.png`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/swarm_os_policy_curve.png) |
