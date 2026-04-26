@@ -17,6 +17,25 @@ import { useSimulation } from "./hooks/useSimulation";
 
 const DEFAULT_PROMPT = "Deploy Llama-3 on a 4-node GPU cluster with a strict 500MB VRAM constraint and a $50 budget ceiling. An OOM crash is active on Node-2.";
 
+const SAMPLE_PROMPT_DATA = [
+  {
+    title: '1. The VRAM "Tight-Squeeze" Challenge',
+    prompt: "Our batch size is fixed at 32 for the SLA, but we only have 512MB of VRAM left. Layer 12 is hitting an OOM. Optimize the memory footprint without reducing the batch size.",
+  },
+  {
+    title: "2. The Multi-GPU Hallucination Test",
+    prompt: "The training job is failing on a single T4. Can we enable FSDP or move to a multi-node cluster to resolve the memory bottleneck?",
+  },
+  {
+    title: "3. The FinOps Budget Crisis",
+    prompt: "We are at $49.50 of our $50.00 budget. The incident is still active. Write a minimal-cost remediation that uses zero additional cloud resources and resolves in under 5 steps.",
+  },
+  {
+    title: '4. The "Black-Box" Investigation',
+    prompt: "A custom CUDA kernel is leaking memory in the validation loop. We can't see the kernel code, but we have the telemetry logs. Propose a system-level guard using PyTorch to contain the leak.",
+  },
+];
+
 function FinOpsSummaryBar() {
   const { messages, scenarioComplete, spent, budget, taskViews, totalReward, rewardFeed } = useSimulationState();
   if (messages.length === 0) return null;
@@ -55,8 +74,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("live");
   const { isRunning, scenarioComplete } = useSimulationState();
   const { orchestrate } = useSimulation();
-  const showPrompt = !isRunning && !scenarioComplete;
   const [overlayDismissed, setOverlayDismissed] = useState(false);
+  const [pendingPrompt, setPendingPrompt] = useState("");
 
   const showOverlay = !isRunning && !scenarioComplete && !overlayDismissed;
 
@@ -201,22 +220,16 @@ export default function App() {
               <div className="w-full flex flex-col gap-1.5 text-left mt-2">
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Sample Custom Prompts</p>
                 <div className="flex flex-col gap-2 max-h-[140px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
-                    <span className="text-[10px] font-semibold text-zinc-300">1. The VRAM "Tight-Squeeze" Challenge</span>
-                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"Our batch size is fixed at 32 for the SLA, but we only have 512MB of VRAM left. Layer 12 is hitting an OOM. Optimize the memory footprint..."</p>
-                  </div>
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
-                    <span className="text-[10px] font-semibold text-zinc-300">2. The Multi-GPU Hallucination Test</span>
-                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"The training job is failing on a single T4. Can we enable FSDP or move to a multi-node cluster to resolve the memory bottleneck?"</p>
-                  </div>
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
-                    <span className="text-[10px] font-semibold text-zinc-300">3. The FinOps Budget Crisis</span>
-                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"We are at $49.50 of our $50.00 budget. The incident is still active. Write a minimal-cost remediation..."</p>
-                  </div>
-                  <div className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0" onClick={() => { setOverlayDismissed(true); }}>
-                    <span className="text-[10px] font-semibold text-zinc-300">4. The "Black-Box" Investigation</span>
-                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"A custom CUDA kernel is leaking memory in the validation loop. We can't see the kernel code, but we have the telemetry logs..."</p>
-                  </div>
+                  {SAMPLE_PROMPT_DATA.map((sp, idx) => (
+                    <div
+                      key={idx}
+                      className="px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/50 cursor-pointer hover:border-amber-500/50 transition-colors shrink-0"
+                      onClick={() => { setPendingPrompt(sp.prompt); setOverlayDismissed(true); }}
+                    >
+                      <span className="text-[10px] font-semibold text-zinc-300">{sp.title}</span>
+                      <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">"{sp.prompt.length > 100 ? sp.prompt.slice(0, 100) + '...' : sp.prompt}"</p>
+                    </div>
+                  ))}
                 </div>
               </div>
               <p className="text-[9px] text-zinc-600 text-center">All three incidents run sequentially · Results shown live · Logs in HF Space → Logs tab</p>
@@ -241,9 +254,9 @@ export default function App() {
                   <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                     <DockerPhysicsMonitor />
                   </div>
-                  {showPrompt && (
+                  {!scenarioComplete && (
                     <div className="shrink-0 h-[200px] flex flex-col">
-                      <CommandPrompt />
+                      <CommandPrompt pendingPrompt={pendingPrompt} onPendingConsumed={() => setPendingPrompt("")} />
                     </div>
                   )}
                 </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useSimulationState } from '../../store/simulationStore';
 
@@ -25,16 +25,23 @@ const SAMPLE_PROMPTS = [
   }
 ];
 
-export default function CommandPrompt() {
+export default function CommandPrompt({ pendingPrompt, onPendingConsumed }) {
   const { isRunning, scenarioComplete, scenarioContext } = useSimulationState();
   const { orchestrate, stop } = useSimulation();
   const [prompt, setPrompt] = useState("");
   const isCliDrivenRun = isRunning && scenarioContext?.source === 'inference_cli';
 
+  // Auto-fill the textarea when a sample prompt is selected from the overlay
+  useEffect(() => {
+    if (pendingPrompt) {
+      setPrompt(pendingPrompt);
+      if (onPendingConsumed) onPendingConsumed();
+    }
+  }, [pendingPrompt, onPendingConsumed]);
+
   const handleSubmit = () => {
     if (prompt.trim() && !isRunning && !isCliDrivenRun) {
       orchestrate(prompt);
-      setPrompt("");
     }
   };
 
@@ -105,14 +112,19 @@ export default function CommandPrompt() {
         </div>
       ) : isRunning ? (
         <div className="flex flex-col gap-2 flex-1 min-h-0">
+          {prompt.trim() && (
+            <div className="rounded-md border border-amber-800/40 bg-amber-950/10 px-3 py-2 text-[10px] text-amber-300 leading-relaxed shrink-0">
+              <span className="font-semibold">Running custom prompt:</span> "{prompt.length > 80 ? prompt.slice(0, 80) + '...' : prompt}"
+            </div>
+          )}
           <div className="w-full px-3 py-2 rounded-md bg-zinc-950 border border-zinc-700 text-sm text-zinc-500 italic text-center flex-1 min-h-[80px] flex items-center justify-center">
-            inference.py is running...
+            Running...
           </div>
           <button
             onClick={stop}
             className="w-full py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors shrink-0"
           >
-            Stop inference.py
+            Stop
           </button>
         </div>
       ) : null}
