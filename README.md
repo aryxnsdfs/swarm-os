@@ -49,6 +49,57 @@ suggested_hardware: t4-small
 
 ---
 
+## What You'll See: Frontend Features and OpenEnv Logs
+
+This section is a complete map of every panel on the dashboard and every log line you'll see in the HF Space "Logs" tab. Each component is grounded in real OpenEnv physics — none of it is mocked or pre-recorded.
+
+### Frontend Dashboard Panels
+
+| Panel | Location | What It Represents |
+|---|---|---|
+| **Header (FinOps Bar)** | Top of screen | Live SLA timer (counting down from 600s), budget bar (`$0.000 / $50.000`), active agent badges, validator runtime label, and active model name. Updates every WebSocket frame. |
+| **Tab Bar** | Below header | Switches between **Live Environment** (default) and **Training Proof** (RewardCurve + before/after split). |
+| **Start Simulation Overlay** | Full-screen modal on load | Blurred backdrop with a centered "Start Simulation" button. Clicking it sends `POST /api/orchestrate` with the default prompt to begin the three-task simulation. Re-appears when the user clicks "Clear". |
+| **Live Sandbox Telemetry** (`DockerPhysicsMonitor`) | Left column | Real-time VRAM, RAM, CPU, network usage from the OpenEnv physics engine. Container status (`idle` → `running` → `stable`/`warning`) and cluster health (`healthy` / `degraded`) are pushed via the `telemetry` WebSocket event. |
+| **Command Prompt** (`CommandPrompt`) | Left column (when idle) | Allows custom prompts to be submitted instead of the default. Hidden during active runs. |
+| **AI Chat (Multi-Agent)** (`EnterpriseChat`) | Center column | The live multi-agent conversation. Each row shows: agent role (COMMANDER, DETECTIVE, CODER, MANAGER, EVALUATOR, DBA_AGENT, SRE_AGENT, SECURITY_AGENT, COMPLIANCE_AGENT), M2M syntax message (e.g. `IMPL_FP16 \| ETA_15s`), expandable `<think>` reasoning, and the per-step reward delta. Tabs at the top let you switch between the three task views (Easy / Medium / Hard). |
+| **Causal DAG** (`CausalDAG`) | Center column (bottom) | Live Directed Acyclic Graph of the incident. Each node is a recorded causal event (`error`, `fix`, `escalation`, `resolution`). Edges connect parent → child. Built incrementally from the backend `new_causal_event` WebSocket events. |
+| **Root Cause Analysis** (`GitRCAPanel`) | Right column (top) | The auto-generated RCA document. Renders as clean markdown tables: Incident Summary, Causal Chain, Execution Trace, Validation Proof. Populated from the `rca_document` WebSocket event after each task finishes. |
+| **Counterfactual Analysis** (`DeadTimeline`) | Right column (bottom) | Two side-by-side timelines: **Actual Timeline (Swarm OS)** showing real cost/time/SLA from the run, and **Dead Timeline (Human Manual)** projecting what the same incident would cost if a human team handled it. Driven by the `counterfactual` WebSocket event. |
+| **FinOps Summary Bar** | Full-width bottom | Live tracker showing `Incidents`, `Steps`, `Human Cost`, `AI Cost`, `Saved`, `Budget Left`, `Total Reward`. Switches to "Global FinOps Summary" with `[ SUCCESS ]` badge when the scenario completes. |
+| **Phase 1/2/3 Trio** (`BeforeAfterSplit`) | Training tab | Three condensed receipts: Phase 1 (Incident Trigger — task title, root cause, baseline VRAM), Phase 2 (Validation Proof — three-stage validator results), Phase 3 (Incident Outcome — final cost, SLA status, resolution). |
+| **Reward Curve** (`RewardCurve`) | Training tab | Live evaluator reward trace, plotted as a sparkline. Each step appends a point. Color shifts green (positive) or red (negative). |
+| **Real-Time Reward Feed** (`RewardMathFeed`) | Training tab | A scrolling ledger of every reward decision: `agent → target → +/- value`. This is the per-action proof that the rubric is firing as intended. |
+| **FinOps Pre-Flight Audit** (`FinOpsPreFlightAudit`) | Training tab | Four strict enterprise rules visualized as a stepper: `AST Syntax Check` → `Budget Constraint ($50)` → `VRAM Simulation (500MB Limit)` → `Docker Execution Status`. Each rule lights up green (PASS), red (FAIL), or stays gray (PENDING) in real time as the CODER proposes a fix. The gate label ("CLEARED" / "BLOCKED" / "PENDING") is the final pre-flight verdict. |
+
+### OpenEnv Logs (HF Space "Logs" Tab)
+
+The Logs tab streams the actual `inference.py` terminal output — the same output you'd see if you ran `python inference.py` locally. The structured log lines are:
+
+| Log Line | Where it Comes From | What It Proves |
+|---|---|---|
+| `═══ Swarm-OS Runtime Banner ═══` | `print_runtime_banner()` | Provider chain (local, openai, anthropic), active model, task list. Confirms the GGUF model loaded and the OpenAI-compatible server at `127.0.0.1:1234` is reachable. |
+| `╭─ TASK_START · task_easy_gpu_oom ─╮` | `log_start()` | Task ID, environment class (`IncidentResponseEnv`), model name, difficulty, max steps. |
+| `[step 03] action=propose_fix \| reward=+0.40 \| budget=$0.004/$50.000 \| sla=587s` | `log_step()` | Per-step trace: action operation, reward delta, accumulated cost vs budget, SLA seconds remaining, active agent, telemetry snapshot. |
+| `[chat] COMMANDER: ACK \| OPENENV_BRIDGE \| INCIDENT_ACTIVE` | `_run_openenv_frontend_scenario` broadcast | Mirror of the AI Chat panel — every M2M agent message also prints to the log. |
+| `[reward] step_4 → +0.40 (CODER)` | Reward broadcast | Per-step reward decision logged by the evaluator. |
+| `[telemetry] vram=2.6GB \| ram=700MB \| cpu=48% \| container=running` | `_set_telemetry_state` | Live physics snapshot. The same numbers that drive the Live Sandbox Telemetry panel. |
+| `╰─ TASK_END · task_easy_gpu_oom \| success=True \| score=0.78 ─╯` | `log_end()` | Final score, total steps, success flag, full reward sequence. |
+| `Auto-generated RCA report broadcast to frontend` | `_finalize_orchestration` | The RCA markdown was built and emitted via WebSocket. |
+| `Scenario 'primary' marked complete — replay buffer cleared for clean refresh` | `_finalize_orchestration` | Final task finished; the backend cleared its replay buffer so a page refresh starts clean. |
+
+### What This Demonstrates
+
+Together, the dashboard and the logs are designed to make every claim in this submission auditable:
+
+- **The model is local** — Logs show `provider=local`, `endpoint=http://127.0.0.1:1234/v1`. No external API calls.
+- **The reward signal is real** — The Reward Feed panel shows every individual reward decision; the logs show the same values.
+- **The validator is strict** — The FinOps Pre-Flight Audit visualizes each of the four rules separately. A FAIL in any rule blocks the fix.
+- **Self-improvement is observable** — The Reward Curve trends up across the three tasks; the training plots in `swarm_os_reward_curve.png` show the same trend across 295 GRPO steps.
+- **Cost savings are mathematically grounded** — The Counterfactual Analysis shows `actual` (from the live run) vs `dead` (5.6x cost projection + escalation). The FinOps Summary computes `Saved = Human Cost − AI Cost` and renders it green when the scenario closes successfully.
+
+---
+
 ## Running a Fully Local Model in the Cloud
 
 > **This entire system — the 4.9GB GGUF model, the inference engine, the React dashboard, and the FastAPI orchestrator — runs inside a single Hugging Face Docker Space with zero external API calls.**
@@ -81,17 +132,19 @@ By leveraging:
 ## Table of Contents
 
 1. [How to Use the Live Demo](#how-to-use-the-live-demo)
-2. [Running a Fully Local Model in the Cloud](#running-a-fully-local-model-in-the-cloud)
-3. [The Narrative and Problem Statement](#part-i-the-narrative-and-problem-statement)
-4. [Training Architecture and Infrastructure](#part-ii-the-training-architecture-and-infrastructure)
-5. [The Synthesized Adversarial Curriculum](#part-iii-the-synthesized-adversarial-curriculum-120-prompts)
-6. [The Evolutionary Engine (GRPO) and Heuristic Oracle](#part-iv-the-evolutionary-engine-grpo-and-heuristic-oracle)
-7. [Deep Telemetry and Observable Evidence of Learning](#part-v-deep-telemetry-and-observable-evidence-of-learning)
-8. [The Monolithic Export (Local Autonomy)](#part-vi-the-monolithic-export-local-autonomy)
-9. [Hackathon Compliance Checklist](#hackathon-compliance-checklist)
-10. [Quick Start](#quick-start)
-11. [Tech Stack](#tech-stack)
-12. [OpenEnv Backend: Technical Reference](#openenv-backend-technical-reference)
+2. [What You'll See: Frontend Features and OpenEnv Logs](#what-youll-see-frontend-features-and-openenv-logs)
+3. [Running a Fully Local Model in the Cloud](#running-a-fully-local-model-in-the-cloud)
+4. [The Narrative and Problem Statement](#part-i-the-narrative-and-problem-statement)
+5. [Training Architecture and Infrastructure](#part-ii-the-training-architecture-and-infrastructure)
+6. [The Synthesized Adversarial Curriculum](#part-iii-the-synthesized-adversarial-curriculum-120-prompts)
+7. [The Evolutionary Engine (GRPO) and Heuristic Oracle](#part-iv-the-evolutionary-engine-grpo-and-heuristic-oracle)
+8. [Deep Telemetry and Observable Evidence of Learning](#part-v-deep-telemetry-and-observable-evidence-of-learning)
+9. [The Monolithic Export (Local Autonomy)](#part-vi-the-monolithic-export-local-autonomy)
+10. [Hackathon Compliance Checklist](#hackathon-compliance-checklist)
+11. [Quick Start](#quick-start)
+12. [How to Upload to GitHub](#how-to-upload-to-github)
+13. [Tech Stack](#tech-stack)
+14. [OpenEnv Backend: Technical Reference](#openenv-backend-technical-reference)
 
 ---
 
@@ -842,6 +895,66 @@ cd frontend && npm run dev
 # terminal 4 — drive a scenario
 python inference.py
 ```
+
+## How to Upload to GitHub
+
+The same files that ship to the Hugging Face Space are mirrored to GitHub for source-control review. This is a one-time setup; afterwards every change is a single `git push`.
+
+```bash
+# 1. Initialize the local repo (skip if already a git repo)
+cd d:/op
+git init
+git branch -M main
+
+# 2. Configure your identity (one-time)
+git config user.email "you@example.com"
+git config user.name  "Your Name"
+
+# 3. Make sure Git LFS is installed and tracking the large training plots
+#    (the .gitattributes file is already committed for this)
+git lfs install
+git lfs track "*.png"
+
+# 4. Stage everything respected by .gitignore
+git add .
+
+# 5. Commit
+git commit -m "Initial Swarm-OS submission"
+
+# 6. Create an empty repo on github.com/new (e.g. swarm-os) without a README
+
+# 7. Add the GitHub remote and push
+git remote add origin https://github.com/<your-github-user>/swarm-os.git
+git push -u origin main
+```
+
+When prompted for credentials on Windows/PowerShell, use a **GitHub Personal Access Token** (Settings → Developer settings → Personal access tokens → Fine-grained tokens) with `Contents: Read and write` permission on the target repo.
+
+#### Pushing follow-up changes
+
+After the one-time setup, mirroring a change to both GitHub and the Hugging Face Space is two pushes:
+
+```bash
+git add .
+git commit -m "Describe your change"
+git push origin main      # GitHub
+git push space main       # Hugging Face Space (rebuilds the Space)
+```
+
+#### What gets uploaded
+
+The `.gitignore` is configured so the upload contains exactly the files referenced in [Submission Resources](#submission-resources):
+
+- All Python source (`backend/`, `swarm_openenv_env/`, `inference.py`, `kaggle_training_notebook.py`, `kaggle_visualize_training.py`)
+- The compiled React dashboard (`frontend/dist/`)
+- The OpenEnv manifest (`openenv.yaml`)
+- Training artifacts (`reward_log.jsonl`, `training_summary.json`, `swarm_os_policy_curve.png`, `swarm_os_reward_curve.png`)
+- Documentation (`README.md`, `BLOG.md`)
+- `Dockerfile` and `start.sh` for the HF Space
+
+Heavy artifacts that are *not* uploaded directly: the GGUF model (lives in [`aryxn323/meta_hackthon_2010_2026`](https://huggingface.co/aryxn323/meta_hackthon_2010_2026) and is downloaded at cold-boot by `start.sh`), the local `node_modules/`, virtual environments, and any `.cache/` directories.
+
+---
 
 ### Reproducing the Training (Kaggle T4)
 

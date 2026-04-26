@@ -524,6 +524,100 @@ We trained a language model to stop apologizing and start engineering — and th
 3. **Watch the agents work** — The AI Chat panel shows live multi-agent communication. The left panel shows sandbox telemetry. The right panel builds the Root Cause Analysis and Counterfactual Analysis in real time.
 4. **Check the Logs** — Click the "Logs" tab in the HF Space header to see the full `inference.py` terminal output.
 
+## What You'll See: Frontend Features and OpenEnv Logs
+
+This is a complete map of what every panel on the dashboard means and what every log line in the HF Space "Logs" tab is proving.
+
+### Dashboard Panels
+
+| Panel | What It Represents |
+|---|---|
+| **Header (FinOps Bar)** | Live SLA timer (counting down from 600s), budget bar (`$/$50.000`), active agent badges, validator runtime label, active model name. |
+| **Start Simulation Overlay** | Blurred backdrop with a centered button — clicking it sends `POST /api/orchestrate` to the FastAPI backend and starts the three-task run. Reappears after "Clear". |
+| **Live Sandbox Telemetry** | Real-time VRAM, RAM, CPU, network from the OpenEnv physics engine. Container status (`idle` → `running` → `stable`/`warning`) and cluster health. |
+| **AI Chat (Multi-Agent)** | Live M2M conversation: `COMMANDER`, `DETECTIVE`, `CODER`, `MANAGER`, `EVALUATOR`, `DBA_AGENT`, `SRE_AGENT`, `SECURITY_AGENT`, `COMPLIANCE_AGENT`. Each message has expandable `<think>` reasoning and a per-step reward delta. |
+| **Causal DAG** | Live Directed Acyclic Graph of the incident, built from `new_causal_event` WebSocket frames. |
+| **Root Cause Analysis** | Auto-generated RCA document (Incident Summary, Causal Chain, Execution Trace, Validation Proof) rendered as clean markdown tables. |
+| **Counterfactual Analysis** | Side-by-side **Actual Timeline (Swarm OS)** vs **Dead Timeline (Human Manual)** showing the cost/SLA delta between AI and human response. |
+| **FinOps Pre-Flight Audit** | Four strict enterprise rules visualized as a stepper: `AST Syntax Check`, `Budget Constraint ($50)`, `VRAM Simulation (500MB Limit)`, `Docker Execution Status`. Each turns green (PASS), red (FAIL), or stays gray (PENDING). |
+| **Reward Curve** | Live evaluator reward sparkline. Each step appends a point. |
+| **Real-Time Reward Feed** | Scrolling ledger of every reward decision: `agent → target → +/- value`. |
+| **Phase 1/2/3 Trio** | Phase 1 (Incident Trigger), Phase 2 (Validation Proof), Phase 3 (Incident Outcome). |
+| **FinOps Summary Bar** | Live tracker — `Incidents`, `Steps`, `Human Cost`, `AI Cost`, `Saved`, `Budget Left`, `Total Reward`. Switches to "Global FinOps Summary" with `[ SUCCESS ]` when the scenario closes. |
+
+### OpenEnv Logs (HF Space "Logs" Tab)
+
+| Log Line | What It Proves |
+|---|---|
+| `═══ Swarm-OS Runtime Banner ═══` | The GGUF model loaded; the local OpenAI-compatible server at `127.0.0.1:1234` is reachable. |
+| `╭─ TASK_START · task_easy_gpu_oom ─╮` | A task started. Records task ID, environment class, model, difficulty, max steps. |
+| `[step 03] action=propose_fix \| reward=+0.40 \| budget=$0.004/$50.000 \| sla=587s` | Per-step trace: action, reward, accumulated cost, SLA seconds remaining. |
+| `[chat] COMMANDER: ACK \| OPENENV_BRIDGE \| INCIDENT_ACTIVE` | Mirror of the AI Chat panel — every M2M message is also logged. |
+| `[reward] step_4 → +0.40 (CODER)` | Per-step evaluator decision. |
+| `[telemetry] vram=2.6GB \| ram=700MB \| cpu=48% \| container=running` | Live physics snapshot — same numbers feeding the Telemetry panel. |
+| `╰─ TASK_END · task_easy_gpu_oom \| success=True \| score=0.78 ─╯` | Final score, total steps, success flag, full reward sequence. |
+| `Auto-generated RCA report broadcast to frontend` | The RCA markdown was emitted to the dashboard. |
+| `Scenario 'primary' marked complete — replay buffer cleared` | Final task done; replay buffer cleared so a refresh starts clean. |
+
+### What This Demonstrates
+
+- **The model is local** — Logs show `provider=local`, `endpoint=http://127.0.0.1:1234/v1`. No external API calls.
+- **The reward signal is real** — The Reward Feed shows every individual reward decision; the logs confirm the same values.
+- **The validator is strict** — Each of the four FinOps rules is gated independently. A single FAIL blocks the fix.
+- **Self-improvement is observable** — The Reward Curve trends up across the three tasks; `swarm_os_reward_curve.png` shows the same trend across 295 GRPO steps.
+- **Cost savings are auditable** — The Counterfactual panel shows actual run cost vs human projection (5.6×). The FinOps Summary writes the delta to the bottom bar.
+
+---
+
+## How to Upload Everything to Hugging Face and GitHub
+
+The same files mirror to both targets. Setup is one-time; afterwards each change is two `git push` commands.
+
+#### One-time setup
+
+```bash
+cd d:/op
+git init && git branch -M main
+git config user.email "you@example.com"
+git config user.name  "Your Name"
+git lfs install && git lfs track "*.png"
+git add . && git commit -m "Initial Swarm-OS submission"
+```
+
+#### Hugging Face Space
+
+```bash
+huggingface-cli login
+huggingface-cli repo create aryxn323/swarm-os --type space --space_sdk docker
+git remote add space https://huggingface.co/spaces/aryxn323/swarm-os
+git push space HEAD:main
+# Then in HF UI:
+#   Settings → Variables and secrets → MODEL_REPO_ID, MODEL_FILENAME, HF_TOKEN, etc.
+#   Settings → Hardware → t4-small (T4 GPU, 16GB VRAM)
+#   Settings → Persistent storage → 20 GB (caches the GGUF across restarts)
+```
+
+#### GitHub mirror
+
+```bash
+# Create an empty repo at github.com/new (e.g. swarm-os) without a README
+git remote add origin https://github.com/<your-github-user>/swarm-os.git
+git push -u origin main
+```
+
+When prompted for credentials on Windows/PowerShell, use a **GitHub Personal Access Token** with `Contents: Read and write` permission.
+
+#### Pushing follow-up changes
+
+```bash
+git add .
+git commit -m "Describe your change"
+git push origin main      # GitHub
+git push space main       # Hugging Face Space (rebuilds the Space)
+```
+
+---
+
 ## Running a Fully Local Model in the Cloud
 
 > **The entire system — the 4.9GB GGUF model, the inference engine, the React dashboard, and the FastAPI orchestrator — runs inside a single Hugging Face Docker Space with zero external API calls.**
