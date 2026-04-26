@@ -785,8 +785,22 @@ ollama run swarm-os
 ### Running Locally with LM Studio
 
 1. Download [LM Studio](https://lmstudio.ai/)
-2. Import `Llama-3.1-8B-Instruct.Q4_K_M.gguf` from the `final-model/` directory
-3. Load the model and begin inference
+2. Download the GGUF model from [`aryxn323/meta_hackthon_2010_2026`](https://huggingface.co/aryxn323/meta_hackthon_2010_2026) and import it into LM Studio
+3. Start the local server on port `1234` (LM Studio defaults to this)
+4. Run the full stack:
+
+```bash
+# terminal 1 — backend (port 8000)
+cd backend && python main.py
+
+# terminal 2 — frontend dev server (port 5173, proxies to :8000)
+cd frontend && npm run dev
+
+# terminal 3 — run inference (talks to LM Studio on :1234)
+python inference.py
+```
+
+The frontend opens at `http://localhost:5173`. Click "Start inference.py" to begin the simulation — it works identically to the HF Space version.
 
 ### Deploying to a Hugging Face Space (cloud parity with the local stack)
 
