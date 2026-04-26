@@ -52,7 +52,7 @@ export default function CommandPrompt() {
             disabled={!prompt.trim()}
             className="w-full py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white text-xs font-medium transition-colors shrink-0"
           >
-            Start Live Run
+            Run inference.py
           </button>
         </div>
       ) : isCliDrivenRun ? (
@@ -67,13 +67,13 @@ export default function CommandPrompt() {
       ) : isRunning ? (
         <div className="flex flex-col gap-2 flex-1 min-h-0">
           <div className="w-full px-3 py-2 rounded-md bg-zinc-950 border border-zinc-700 text-sm text-zinc-500 italic text-center flex-1 min-h-[80px] flex items-center justify-center">
-            Simulation is running...
+            inference.py is running...
           </div>
           <button
             onClick={stop}
             className="w-full py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors shrink-0"
           >
-            ■ Stop Simulation
+            Stop inference.py
           </button>
         </div>
       ) : null}

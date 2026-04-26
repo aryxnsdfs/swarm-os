@@ -207,7 +207,7 @@ function processEvent(event, dispatch) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            code: "# Live simulation submission",
+            code: "# Live inference.py submission",
             filename: event.payload.m2m.split(' | ')[1].trim(),
             agent_role: event.payload.agent,
             mock_mode: isMock

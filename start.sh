@@ -75,10 +75,15 @@ env -u PORT python -m llama_cpp.server \
     --n_ctx "${N_CTX}" \
     > /tmp/llama_cpp_server.log 2>&1 &
 LLAMA_PID=$!
+
+# Forward llama-cpp logs to the main stdout stream so they appear in HF Space's
+# Logs tab during inference (otherwise the log stream appears silent while generating).
+tail -F /tmp/llama_cpp_server.log 2>/dev/null &
+TAIL_PID=$!
 echo "[start.sh] llama-cpp-python pid=${LLAMA_PID}"
 
 # Forward signals so SIGTERM from the Space tears down the model server too.
-trap 'echo "[start.sh] shutting down..."; kill -TERM "${LLAMA_PID}" 2>/dev/null || true; wait || true' INT TERM
+trap 'echo "[start.sh] shutting down..."; kill -TERM "${LLAMA_PID}" "${TAIL_PID}" 2>/dev/null || true; wait || true' INT TERM
 
 # ----- 3. Wait for /v1/models readiness (max ~120s) -----
 echo "[start.sh] waiting for llama-cpp /v1/models ..."

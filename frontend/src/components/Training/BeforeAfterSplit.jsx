@@ -62,7 +62,7 @@ export default function BeforeAfterSplit() {
   return (
     <div
       className="grid gap-3 h-full min-h-0"
-      style={{ gridTemplateColumns: '40fr 35fr 25fr' }}
+      style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}
     >
 
       {/* ── Phase 1: Incident Trigger ── */}

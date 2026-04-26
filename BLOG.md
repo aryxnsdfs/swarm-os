@@ -27,6 +27,8 @@ We asked a different question: what if a trained AI could handle that whole inci
 
 That question is what Swarm-OS was built to answer.
 
+Swarm-OS is not trying to replace the judgment of experienced engineers with a vague chatbot. It is designed to absorb the repetitive, high-pressure first response work: reading telemetry, opening the right ticket, isolating the root cause, proposing the smallest safe fix, validating it in a locked sandbox, and handing the human team a clean evidence trail. The goal is fewer 3am wakeups, lower incident cost, faster recovery, and better proof for every decision made under pressure.
+
 ## The Danger of "Chatty" AI in a Crisis
 
 Standard Large Language Models were trained to be conversationalists, not constrained engineers. If you tell a standard AI that a server is out of memory, it will likely hallucinate an expensive, budget-breaking solution like, "You should distribute the workload across multiple GPUs using FullyShardedDataParallel (FSDP)." If that code automatically deploys, your cloud bill explodes, or the system crashes completely because that extra hardware simply doesn't exist. In a constrained production environment, conversational AI is a liability.
@@ -161,10 +163,12 @@ Here is the same prompt, before and after:
 
 The model is not just giving a different answer. It is reasoning differently. It understands the constraint. It evaluates options against the constraint. It selects the minimum necessary intervention. That is what 295 steps of GRPO training produced.
 
-**The training curves are the proof:**
+**The training curves are the proof. The trained model file is here: [`aryxn323/meta_hackthon_2010_2026`](https://huggingface.co/aryxn323/meta_hackthon_2010_2026).**
+
+> **Evidence files:** [`reward_log.jsonl`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/reward_log.jsonl) — the per-step reward ledger that generated the curve below. [`training_summary.json`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/training_summary.json) — the aggregate final receipt. These are the raw source files behind both graphs; the plots are not screenshots.
 
 ![Mean Episode Reward Curve](swarm_os_reward_curve.png)
-*The reward starts near 0.15 and converges toward 1.00 by step 150 — the signature of a model that has genuinely internalized the reward signal, not memorized a narrow set of answers.*
+*The reward starts near 0.15 and converges toward 1.00 by step 150 — the signature of a model that has genuinely internalized the reward signal, not memorized a narrow set of answers. Source: `reward_log.jsonl`.*
 
 ![Policy Specialization Curve (KL Divergence)](swarm_os_policy_curve.png)
 *The KL divergence climbs steadily from zero and stabilizes between 0.000070 and 0.000090 — proving the model has specialized deeply without forgetting its base capabilities.*
@@ -173,13 +177,20 @@ The model is not just giving a different answer. It is reasoning differently. It
 
 ## Why We Use the Trained Model Locally in the OpenEnv Environment
 
-After training, the LoRA adapter weights were fused back into the base model and exported as a single **GGUF Q4_K_M** binary file. This is the `meta_hackthon_2010_2026` model that runs locally inside the Swarm-OS OpenEnv environment.
+After training, the LoRA adapter weights were fused back into the base model and exported as a single **GGUF Q4_K_M** binary file (4.9 GB). This is the trained model — **download it directly here**: [`aryxn323/meta_hackthon_2010_2026`](https://huggingface.co/aryxn323/meta_hackthon_2010_2026).
+
+**How the model gets loaded — there is no `meta_hackthon_2010_2026/` folder inside this repository.** The GGUF is too large to commit alongside the code. Instead:
+
+- **On the Hugging Face Space (what judges see):** At cold boot, `start.sh` automatically downloads `Llama-3.1-8B-Instruct.Q4_K_M.gguf` from `aryxn323/meta_hackthon_2010_2026` into `/data/models/` (persistent storage), then starts a `llama-cpp-python` OpenAI-compatible server at `http://127.0.0.1:1234`. The FastAPI backend and `inference.py` both talk to that local endpoint. Every LLM call stays inside the container.
+- **On a local machine:** Download the same GGUF from [Hugging Face](https://huggingface.co/aryxn323/meta_hackthon_2010_2026), load it in LM Studio or Ollama on port `1234`, and run `inference.py`. Same local endpoint, same code path.
+
+In both cases, the trained model weights are served on-device. No cloud API. No data leaving the machine.
 
 The reason we run it locally — not through a cloud API — is not just technical. It is philosophical.
 
 Enterprise infrastructure teams cannot send their server telemetry, stack traces, and incident data to a public cloud endpoint. The data sovereignty requirement is absolute. A model that runs on your hardware, trained on the specific failure modes of your environment, costs $0.012 per incident to operate, and never phones home is not a demo. It is a viable production tool.
 
-When you run the Swarm-OS OpenEnv environment, you are watching a trained, local, air-gapped AI resolve real infrastructure incidents with no external dependencies. The entire brain — the reasoning, the FinOps discipline, the six-step engineering protocol, the anti-FSDP constraint — is embedded in a 4.9GB file on your machine.
+When you run the Swarm-OS OpenEnv environment, you are watching a trained, local, air-gapped AI resolve real infrastructure incidents with no external dependencies. The entire brain — the reasoning, the FinOps discipline, the six-step engineering protocol, the anti-FSDP constraint — is embedded in a 4.9GB file downloaded from Hugging Face and served on your machine.
 
 ---
 
@@ -193,8 +204,23 @@ This is the part that matters most to understand. When the Swarm-OS dashboard is
 
 At the very top of the dashboard, four things are always visible:
 
-**Agent Role Badges (Manager / Detective / Coder)**
-These light up in real time as the COMMANDER assigns the next action to the appropriate agent. When you see the Detective badge active, the AI is reading system logs. When the Coder badge lights up, the AI is writing and submitting a fix. You are watching the multi-agent team coordinate in real time.
+**Agent Role Badges**
+
+The header shows live badges for every active agent. The full roster is:
+
+| Badge | Role |
+|---|---|
+| `COMMANDER` | Orchestrates the swarm, resolves disagreements, triggers the final RCA |
+| `MANAGER` | Opens incident tickets, sets severity, sends stakeholder status updates |
+| `DETECTIVE` | Reads telemetry, runbooks, and stack traces to locate the root cause |
+| `SRE_AGENT` | Validates reliability constraints and checks deployment health |
+| `DBA_AGENT` | Investigates database-layer artifacts (schema diffs, job logs) |
+| `SECURITY_AGENT` | Audits the proposed fix for security implications |
+| `COMPLIANCE_AGENT` | Confirms the fix meets FinOps and constitutional budget rules |
+| `CODER` | Writes the remediation code and submits it to the sandbox validator |
+| `EVALUATOR` | Scores each step against the rubric and issues per-step rewards |
+
+When the Coder badge lights up, the AI has written a fix. That fix is then submitted to the **Docker GPU Validator** (for GPU-constrained incidents) or the **Docker plain-Python Validator** (for schema and canary incidents) — both visible in the validator runtime label on the right side of the header. The same header carries the SLA countdown clock, the budget bar (`$0.003 / $50.000`), and the model identity (`SwarmOS-Llama-3.1-8B-GRPO · 4-bit QLoRA · GGUF · Local`) confirming this is the trained local model, not a cloud API.
 
 **The SLA Countdown Timer (e.g., `09:55`)**
 This is a real ticking clock. It represents the time remaining before the incident breaches the company's Service Level Agreement — the promise made to customers. A well-trained agent should resolve the incident with significant time on the clock. If the timer runs out, the environment registers an SLA breach, the agent gets penalized, and the incident is marked failed. This clock is not decorative. It is the pulse of the entire system.
@@ -220,18 +246,29 @@ The left panel of the Live Environment tab is a timestamped stream of every deci
 
 This is not generated for display. It is the raw output of the model's `<think>` blocks and the OpenEnv state machine, piped directly to the screen over WebSocket. You are reading the model's actual internal monologue as the incident unfolds.
 
-**The AI Chat Panel: Machine-to-Machine Output**
+**The AI Chat Panel: Machine-to-Machine Communication**
 
-The center panel shows the compressed output each agent emits after completing its reasoning. What you see looks like this:
+The center panel is where the agents talk to each other and assign work. The COMMANDER does not just describe a problem — it issues structured directives to specific agents. Each agent responds with its finding, and the COMMANDER routes the next step. You are watching a real-time inter-agent task queue.
+
+What you see in the chat looks like this:
 
 ```
-PROPOSE_FIX | DOCKER GPU VALIDATOR | STATUS=PASS    +1.00 pts
-Budget Left: $49.997 (healthy)  Cost Accrued: $0.003  Burn Rate: $2.500/hr
+COMMANDER  →  DETECT | ARTIFACT=telemetry | TARGET=SRE_AGENT
+SRE_AGENT  →  EVIDENCE_CAPTURED | ARTIFACT=telemetry | VRAM=11.8GB/12GB
+COMMANDER  →  PROPOSE_FIX | DOCKER GPU VALIDATOR | TARGET=CODER
+CODER      →  IMPL_FP16 | ETA=15s | STATUS=PASS    +1.00 pts
+             Budget Left: $49.997 (healthy)  Cost Accrued: $0.003  Burn Rate: $2.500/hr
 ```
 
-This is **Machine-to-Machine (M2M) syntax** — the compressed, pipe-delimited format the model was specifically trained to produce. Every pipe-delimited token is a signal that the OpenEnv backend uses to route the next action. The model was trained to prefer this format over conversational explanations because it is faster to parse, harder to pad with irrelevant content, and forces the model to be precise.
+This is **Machine-to-Machine (M2M) syntax** — the compressed, pipe-delimited format the model was specifically trained to produce. Every pipe-delimited token is a signal that the OpenEnv backend uses to route the next action. The model was trained to prefer this format over conversational English because it is faster to parse, harder to pad with irrelevant content, and forces the model to be precise and deliberate about who does what next.
 
-The difficulty selector (Easy / Medium / Hard) changes the complexity of the incident being run. The M2M toggle switches between readable summaries and the raw protocol output.
+**Switching to Human-Readable mode:** The chat panel has a toggle (M2M / Human). Switch it to **Human** to see the same agent messages translated into plain incident language — useful for reading the reasoning without parsing the protocol syntax.
+
+**Per-step reward in the chat:** Each agent message shows a `+0.XX pts` or `-0.XX pts` badge. This is the live evaluator score for that specific action — the same number that appears in the Reward Curve graph.
+
+**Incident Summary card:** At the end of the final task, the chat panel adds a green summary card showing `RESOLVED`, steps taken, final score, AI cost, budget left, and all per-step rewards as color-coded chips.
+
+**The Live FinOps Tracker bar (bottom of screen):** While the simulation runs, this bar shows `Incidents · Steps · Human Cost · AI Cost · Saved · Budget Left · Total Reward` accumulating in real time. When all three tasks complete, it switches to the **Global FinOps Summary** with a `[ SUCCESS ]` badge — the economic verdict for the entire session.
 
 **The Live FinOps Tracker Bar**
 
@@ -312,6 +349,8 @@ This is the document that makes Swarm-OS auditable. Every claim is backed by a l
 
 ### The Execution Evidence Tab: The Mathematical Proof
 
+When you switch to the **Execution Evidence** tab, the proof panels are arranged from top to bottom in the order a reviewer needs them: reward curve and reward ledger first, then validation proof, FinOps pre-flight checks, counterfactual cost, and sandbox telemetry. This keeps the graph near the receipts that prove it.
+
 **The Evaluator Reward Trace**
 
 The large green chart in the Execution Evidence tab plots the cumulative OpenEnv reward score across each evaluator event during the incident:
@@ -373,9 +412,13 @@ All four items, with actual measurements. This is the Constitutional audit trail
 
 ---
 
-### The Counterfactual Analysis Panel: Why This Matters in Dollars
+### The Execution Evidence Tab: Proof Behind the Numbers
 
-The Counterfactual Analysis panel runs two parallel timelines simultaneously and holds them up side by side:
+Switch to the **Execution Evidence** tab to see the hardware and cost evidence that backs up every claim in the Live Environment.
+
+**The Counterfactual Analysis Panel: Why This Matters in Dollars**
+
+The Counterfactual Analysis panel runs two parallel timelines and holds them side by side:
 
 ```
 ACTUAL TIMELINE (SWARM OS)          DEAD TIMELINE (HUMAN MANUAL)
@@ -385,15 +428,11 @@ SLA Status:        SAFE             SLA Status:        BREACHED
 Execution Track:   8%               Execution Track:   72%
 ```
 
-The "Dead Timeline" is the counterfactual — what would have happened if a human team had handled this incident. The projected cost of $0.25 comes directly from the FinOps model: $2.50/hour burn rate, applied to the estimated 6-minute human resolution time for this incident type. The SLA status shows BREACHED because the estimated human resolution time exceeds the 10-minute SLA window. The Execution Track at 72% shows how far into the incident a human team would still be at the moment Swarm-OS has already resolved it.
+The "Dead Timeline" is the counterfactual — what would have happened if a human team had handled this incident. The projected cost comes directly from the FinOps model: $2.50/hour burn rate, applied to the estimated human resolution time for this incident type. The SLA shows BREACHED because the estimated human resolution time exceeds the 10-minute SLA window. The Execution Track at 72% shows how far into the incident a human team would still be at the moment Swarm-OS has already resolved it. The Swarm-OS track at 8% means the AI closed the incident while the human team would still be in the first quarter of their triage.
 
-The Swarm-OS track at 8% means the AI had already closed the incident while the human team would still be in the first quarter of their triage process.
+This is not speculation. Every number comes from the same FinOps model that governs the environment and is deterministic and traceable.
 
-This is not speculation. The numbers come from the same FinOps model that governs the entire environment. Every figure is deterministic and traceable.
-
----
-
-### The Live Sandbox Telemetry Panel
+**The Live Sandbox Telemetry Panel**
 
 ```
 RAM:    343MB
@@ -402,7 +441,7 @@ CPU:    2%
 Steps:  4
 ```
 
-These four numbers are direct hardware measurements taken from inside the Docker container after the fix executes. They are not estimates or projections. The VRAM figure of 295MB is the same number that appears in the Validation Proof panel, the Pre-Flight Audit panel, and the Root Cause Analysis — because it is the same measurement, propagated through every part of the system. The CPU at 2% confirms the container resolved cleanly without runaway processes. The RAM at 343MB confirms the fix did not silently overflow VRAM into system memory (which our double-lock sandbox is specifically designed to prevent).
+These four numbers are direct hardware measurements taken from inside the Docker container after the fix executes. The VRAM figure of 295MB is the same number that appears in the Validation Proof panel, the Pre-Flight Audit, and the Root Cause Analysis — it is the same measurement propagated through every part of the system. CPU at 2% confirms the container resolved cleanly without runaway processes. RAM at 343MB confirms the fix did not silently overflow VRAM into system memory — which is exactly what the double-lock sandbox is designed to prevent.
 
 ---
 
@@ -539,10 +578,11 @@ We trained a language model to stop apologizing and start engineering — and th
 
 ## How to Use the Live Demo
 
-1. **Open the Space** — Go to [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os) and wait for it to finish building.
-2. **Click "Start inference.py"** — A centered overlay button appears on the dashboard. Click it to launch the full OpenEnv simulation across all three incidents (Easy, Medium, Hard).
-3. **Watch the agents work** — The AI Chat panel shows live multi-agent communication. The left panel shows sandbox telemetry. The right panel builds the Root Cause Analysis and Counterfactual Analysis in real time.
-4. **Check the Logs** — Click the "Logs" tab in the HF Space header to see the full `inference.py` terminal output.
+1. **Open the Space** — Go to [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os). Wait for the build to complete (first boot downloads the 4.9 GB GGUF model — allow 2–3 minutes).
+2. **Click "Start inference.py"** — A centered overlay with task descriptions appears on the dashboard. Click the green **Start inference.py** button to launch the full OpenEnv run across all three incidents (Easy → Medium → Hard). The overlay disappears once the run starts.
+3. **Watch the agents work** — The AI Chat panel shows live multi-agent communication and per-step reward badges. The left panel shows agent log entries tagged `[STATE]`, `[METRICS]`, `[ANALYSIS]`, `[DECISION]`. Switch to the **Execution Evidence** tab to see the Counterfactual Analysis and Sandbox Telemetry.
+4. **Check the Logs** — Click the **Logs** tab in the HF Space header to see the full `inference.py` terminal output with timestamped step logs.
+5. **Read the summary** — At the end of all three tasks, the AI Chat panel shows an Incident Summary card and the FinOps bar becomes the Global FinOps Summary with total savings.
 
 ## What You'll See: Frontend Features and OpenEnv Logs
 
@@ -553,7 +593,7 @@ This is a complete map of what every panel on the dashboard means and what every
 | Panel | What It Represents |
 |---|---|
 | **Header (FinOps Bar)** | Live SLA timer (counting down from 600s), budget bar (`$/$50.000`), active agent badges, validator runtime label, active model name. |
-| **Start inference.py Overlay** | Blurred backdrop with a centered "Start inference.py" button — clicking it sends `POST /api/orchestrate` to the FastAPI backend and starts the three-task run. Reappears after "Clear". |
+| **Run inference.py Overlay** | Blurred backdrop with a centered "Run inference.py" button — clicking it sends `POST /api/orchestrate` to the FastAPI backend and starts the three-task run. Reappears only after "Clear". |
 | **Live Sandbox Telemetry** | Real-time VRAM, RAM, CPU, network from the OpenEnv physics engine. Container status (`idle` → `running` → `stable`/`warning`) and cluster health. |
 | **AI Chat (Multi-Agent)** | Live M2M conversation: `COMMANDER`, `DETECTIVE`, `CODER`, `MANAGER`, `EVALUATOR`, `DBA_AGENT`, `SRE_AGENT`, `SECURITY_AGENT`, `COMPLIANCE_AGENT`. Each message has expandable `<think>` reasoning and a per-step reward delta. |
 | **Causal DAG** | Live Directed Acyclic Graph of the incident, built from `new_causal_event` WebSocket frames. |

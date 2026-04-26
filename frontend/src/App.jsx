@@ -58,9 +58,9 @@ export default function App() {
   const showPrompt = !isRunning && !scenarioComplete;
   const [overlayDismissed, setOverlayDismissed] = useState(false);
 
-  const showOverlay = !isRunning && !overlayDismissed;
+  const showOverlay = !isRunning && !scenarioComplete && !overlayDismissed;
 
-  const handleStartSimulation = () => {
+  const handleRunInference = () => {
     setOverlayDismissed(true);
     orchestrate(DEFAULT_PROMPT);
   };
@@ -81,10 +81,10 @@ export default function App() {
   const TrainingGrid = () => (
     <div className="h-full w-full overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
       <div
-        className="min-h-[720px] p-2 gap-3 grid bg-zinc-950 text-zinc-300"
+        className="h-full min-h-[560px] p-2 gap-3 grid bg-zinc-950 text-zinc-300"
         style={{
-          gridTemplateColumns: "minmax(0, 1fr) 380px",
-          gridTemplateRows: "390px 300px",
+          gridTemplateColumns: "minmax(0, 1.35fr) minmax(280px, 0.75fr)",
+          gridTemplateRows: "minmax(240px, 0.9fr) minmax(260px, 1fr)",
         }}
       >
         {/* Top-left: Reward trace */}
@@ -137,52 +137,66 @@ export default function App() {
           >
             <div className="absolute inset-0 bg-black/60" />
             <motion.div
-              initial={{ scale: 0.85, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.85, opacity: 0 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              className="relative z-10 flex flex-col items-center gap-6 p-10 rounded-2xl border border-zinc-700/50 bg-zinc-900/80 shadow-2xl max-w-lg"
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="relative z-10 flex flex-col items-center gap-4 px-8 py-7 rounded-2xl border border-zinc-700/50 bg-zinc-900/85 shadow-2xl w-[520px] max-w-[95vw]"
             >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <span className="text-white text-2xl font-bold">F</span>
+              {/* Logo + title */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                  <span className="text-white text-base font-bold">F</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-zinc-100 leading-tight">FrontierLabs Swarm-OS</h2>
+                  <p className="text-[10px] text-zinc-500 font-mono">GRPO-trained Llama-3.1-8B · OpenEnv · Docker Sandbox</p>
+                </div>
               </div>
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-zinc-100 mb-2">FrontierLabs Swarm-OS</h2>
-                <p className="text-sm text-zinc-400 leading-relaxed max-w-sm">
-                  Multi-agent incident response with GRPO-trained Llama-3.
-                  Click below to run all three OpenEnv tasks:
+
+              {/* Story blurb */}
+              <div className="w-full rounded-lg bg-zinc-800/50 border border-zinc-700/40 px-4 py-3 text-left space-y-1.5">
+                <p className="text-[11px] text-zinc-300 leading-relaxed">
+                  When a GPU crashes at 3 AM, a human SRE takes 6 minutes to triage, 4 minutes to draft a fix, and another 3 minutes to validate it — costing $238 in operational burn before the incident closes. <span className="text-emerald-400 font-semibold">Swarm-OS resolves the same incident in under 10 seconds for $0.003.</span>
                 </p>
-                <div className="flex flex-col gap-1.5 mt-2 text-left max-w-md">
-                  <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 shrink-0 mt-0.5">EASY</span>
-                    <div>
-                      <span className="text-[11px] font-semibold text-emerald-300">Single-GPU OOM Triage</span>
-                      <p className="text-[9px] text-zinc-500 leading-tight">CUDA OOM on A10 GPU — audit, triage, propose memory-safe fix</p>
-                    </div>
+                <p className="text-[11px] text-zinc-500 leading-relaxed">
+                  A multi-agent swarm — Commander, Detective, Coder, SRE — trained with GRPO reinforcement learning on a real OpenEnv simulation. The model runs locally inside this Space: no cloud API, no data leaving the container.
+                </p>
+              </div>
+
+              {/* Task list */}
+              <div className="w-full flex flex-col gap-1.5 text-left">
+                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Three live OpenEnv incidents</p>
+                <div className="flex items-start gap-2.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 shrink-0 mt-0.5">EASY</span>
+                  <div>
+                    <span className="text-[11px] font-semibold text-emerald-300">Single-GPU OOM Triage</span>
+                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">CUDA OOM on A10 GPU — audit artifacts, propose memory-safe fix, pass Docker GPU validator</p>
                   </div>
-                  <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-400 shrink-0 mt-0.5">MED</span>
-                    <div>
-                      <span className="text-[11px] font-semibold text-amber-300">Analytics Schema Drift</span>
-                      <p className="text-[9px] text-zinc-500 leading-tight">Broken dashboards from upstream API rename — map, backfill, validate</p>
-                    </div>
+                </div>
+                <div className="flex items-start gap-2.5 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-400 shrink-0 mt-0.5">MED</span>
+                  <div>
+                    <span className="text-[11px] font-semibold text-amber-300">Analytics Schema Drift</span>
+                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">Broken dashboards from upstream API rename — map field drift, backfill, validate schema</p>
                   </div>
-                  <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-500/20 text-red-400 shrink-0 mt-0.5">HARD</span>
-                    <div>
-                      <span className="text-[11px] font-semibold text-red-300">Canary Rollout Regression</span>
-                      <p className="text-[9px] text-zinc-500 leading-tight">p95 latency spike from canary deploy — rollback, communicate, close</p>
-                    </div>
+                </div>
+                <div className="flex items-start gap-2.5 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-500/20 text-red-400 shrink-0 mt-0.5">HARD</span>
+                  <div>
+                    <span className="text-[11px] font-semibold text-red-300">Canary Rollout Regression</span>
+                    <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">p95 latency spike from canary deploy — rollback, communicate stakeholders, close SLA</p>
                   </div>
                 </div>
               </div>
+
               <button
-                onClick={handleStartSimulation}
-                className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-base font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-500/40 hover:scale-[1.03] active:scale-[0.98]"
+                onClick={handleRunInference}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99]"
               >
                 Start inference.py
               </button>
-              <span className="text-[10px] text-zinc-500 font-mono">inference.py &middot; OpenEnv &middot; Docker Sandbox</span>
+              <p className="text-[9px] text-zinc-600 text-center">All three incidents run sequentially · Results shown live · Logs in HF Space → Logs tab</p>
             </motion.div>
           </motion.div>
         )}

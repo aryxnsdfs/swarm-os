@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect } from "react";
+import { createContext, useContext, useReducer, useEffect, useRef } from "react";
 import {
   COMPRESSION_DATA,
   FPSR_DATA,
@@ -714,6 +714,11 @@ function simulationReducer(state, action) {
 
 export function SimulationProvider({ children }) {
   const [state, dispatch] = useReducer(simulationReducer, initialState);
+  // Track scenarioComplete in a ref so ws.onclose can read it without closure staleness
+  const scenarioCompleteRef = useRef(false);
+  useEffect(() => {
+    scenarioCompleteRef.current = state.scenarioComplete;
+  }, [state.scenarioComplete]);
 
   // Global Stable WebSocket Connection Managed by Provider
   useEffect(() => {
@@ -824,7 +829,9 @@ export function SimulationProvider({ children }) {
             console.warn(
               `[SimulationProvider] WebSocket Closed (${e.code}). Reconnecting in ${retryDelay}ms...`,
             );
-            if (!sleepResetTimer) {
+            // Only start the sleep-reset timer if the scenario hasn't completed normally.
+            // After a normal completion, losing the WebSocket is expected — don't wipe the UI.
+            if (!sleepResetTimer && !scenarioCompleteRef.current) {
               sleepResetTimer = setTimeout(() => {
                 console.warn("[SimulationProvider] Backend unavailable long enough to treat as Space sleep. Clearing stale UI.");
                 dispatch({ type: "CLEAR_SIMULATION" });

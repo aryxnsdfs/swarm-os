@@ -14,6 +14,8 @@ suggested_hardware: t4-small
 > The Architecture of an Elite Artificial Intelligence Engineer
 > 2026 Meta OpenEnv Hackathon Submission
 
+Swarm-OS is built for the moment when production infrastructure fails and the human incident queue is already overloaded. Instead of giving engineers another chat window to babysit, it runs a trained local model inside OpenEnv, assigns specialist agents to the incident, validates every proposed fix in Docker, and leaves behind an audit trail that explains the root cause, the cost, the SLA outcome, and the exact reward decisions that shaped the run.
+
 ---
 
 ## Submission Resources
@@ -41,9 +43,9 @@ suggested_hardware: t4-small
 ## How to Use the Live Demo
 
 1. **Open the Space** — Navigate to [https://huggingface.co/spaces/aryxn323/swarm-os](https://huggingface.co/spaces/aryxn323/swarm-os). Wait for the Space to finish building (the status indicator in the top-right will show "Running").
-2. **Click "Start inference.py"** — A centered overlay button will appear on the dashboard. Click it to launch the full OpenEnv simulation.
+2. **Click "Run inference.py"** — A centered overlay button will appear on the dashboard. Click it to launch the full OpenEnv inference run.
 3. **Watch the agents work** — The AI Chat panel (center) shows real-time multi-agent communication. The left panel displays live sandbox telemetry (VRAM, CPU, RAM). The right panel builds the Root Cause Analysis and Counterfactual Analysis as the agents progress.
-4. **All three tasks run automatically** — The simulation runs three incidents sequentially: Easy (GPU OOM), Medium (Schema Drift), and Hard (Canary Regression). Each task shows agent reasoning, code proposals, and validator results in real time.
+4. **All three tasks run automatically** — `inference.py` runs three incidents sequentially: Easy (GPU OOM), Medium (Schema Drift), and Hard (Canary Regression). Each task shows agent reasoning, code proposals, and validator results in real time.
 5. **Check the Logs** — Click the "Logs" tab in the HF Space header to see the full `inference.py` terminal output with per-step rewards, telemetry, and the final FinOps summary.
 
 ---
@@ -58,7 +60,7 @@ This section is a complete map of every panel on the dashboard and every log lin
 |---|---|---|
 | **Header (FinOps Bar)** | Top of screen | Live SLA timer (counting down from 600s), budget bar (`$0.000 / $50.000`), active agent badges, validator runtime label, and active model name. Updates every WebSocket frame. |
 | **Tab Bar** | Below header | Switches between **Live Environment** (default) and **Training Proof** (RewardCurve + before/after split). |
-| **Start inference.py Overlay** | Full-screen modal on load | Blurred backdrop with a centered "Start inference.py" button. Clicking it sends `POST /api/orchestrate` with the default prompt to begin the three-task simulation. Re-appears when the user clicks "Clear". |
+| **Run inference.py Overlay** | Full-screen modal on load | Blurred backdrop with a centered "Run inference.py" button. Clicking it sends `POST /api/orchestrate` with the default prompt to begin the three-task OpenEnv inference run. Re-appears only when the user intentionally clicks "Clear". |
 | **Live Sandbox Telemetry** (`DockerPhysicsMonitor`) | Left column | Real-time VRAM, RAM, CPU, network usage from the OpenEnv physics engine. Container status (`idle` → `running` → `stable`/`warning`) and cluster health (`healthy` / `degraded`) are pushed via the `telemetry` WebSocket event. |
 | **Command Prompt** (`CommandPrompt`) | Left column (when idle) | Allows custom prompts to be submitted instead of the default. Hidden during active runs. |
 | **AI Chat (Multi-Agent)** (`EnterpriseChat`) | Center column | The live multi-agent conversation. Each row shows: agent role (COMMANDER, DETECTIVE, CODER, MANAGER, EVALUATOR, DBA_AGENT, SRE_AGENT, SECURITY_AGENT, COMPLIANCE_AGENT), M2M syntax message (e.g. `IMPL_FP16 \| ETA_15s`), expandable `<think>` reasoning, and the per-step reward delta. Tabs at the top let you switch between the three task views (Easy / Medium / Hard). |
@@ -647,6 +649,13 @@ In standard Supervised Learning, a dropping "Loss" metric indicates success. In 
 
 ### 5.2 Visualizing the Evolution
 
+> **Evidence files — raw proof behind the graphs below:**
+> - [`reward_log.jsonl`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/reward_log.jsonl) — per-step reward ledger across 295 training steps. Each record captures `step`, `reward_latest`, `window_mean`, `window_std`, `window_min`, `window_max`, `all_time_mean`, and `trend`. This is the direct source for Figure 2.
+> - [`training_summary.json`](https://huggingface.co/spaces/aryxn323/swarm-os/blob/main/training_summary.json) — aggregate final receipt: `total_steps`, `final_reward`, `best_reward`, `worst_reward`, `first_10_mean`, `last_10_mean`, `improvement` (+0.637 absolute delta), and `trend`. Verifies the headline numbers.
+> - Trained model: [`aryxn323/meta_hackthon_2010_2026`](https://huggingface.co/aryxn323/meta_hackthon_2010_2026) — the GGUF that powers the live demo.
+>
+> The graphs below are not screenshots. They were generated directly from these committed files.
+
 **Figure 1 — Agent Policy Specialization Curve (KL Divergence over 200 steps)**
 
 ![Swarm-OS Agent Policy Specialization Curve](swarm_os_policy_curve.png)
@@ -657,7 +666,7 @@ In standard Supervised Learning, a dropping "Loss" metric indicates success. In 
 
 ![Swarm-OS Mean Episode Reward](swarm_os_reward_curve.png)
 
-*Evaluation Reward Score on the Y-axis vs. Training Steps on the X-axis. The reward trajectory begins at approximately 0.15 (near-baseline conversational behavior) and converges asymptotically toward 1.0, demonstrating measurable, continuous self-improvement across the full training run. This is the primary evidence for OpenEnv Hackathon Theme 4.*
+*Evaluation Reward Score on the Y-axis vs. Training Steps on the X-axis. The reward trajectory begins at approximately 0.15 (near-baseline conversational behavior) and converges asymptotically toward 1.0, demonstrating measurable, continuous self-improvement across the full training run. This is the primary evidence for OpenEnv Hackathon Theme 4. Source data: `reward_log.jsonl`.*
 
 ### 5.3 Quantitative Training Summary
 
@@ -741,6 +750,14 @@ Generated files: ['/tmp/grpo_gguf_export_gguf/Llama-3.1-8B-Instruct.Q4_K_M.gguf'
 
 **The Significance:** This single, highly optimized binary file (~4.9 GB) allows complete execution of the Swarm-OS intelligence locally via **Ollama** or **LM Studio** — entirely independent of cloud API rate limits, subscription fees, and internet connectivity. This fulfills the ultimate objective of the hackathon: an **autonomous, private, and highly constrained AI incident response engine** ready for real-world deployment.
 
+### Why We Use the Trained Model Locally in the OpenEnv Environment
+
+When users download the Hugging Face files from [`aryxn323/meta_hackthon_2010_2026`](https://huggingface.co/aryxn323/meta_hackthon_2010_2026), they are getting the fully trained Swarm-OS GGUF model. There does not need to be a checked-in `meta_hackthon_2010_2026/` folder inside this repository. The local runtime only needs the downloaded `.gguf` file path, exposed through `MODEL_PATH`, or an OpenAI-compatible local server such as LM Studio on `127.0.0.1:1234`.
+
+1. **Data Sovereignty:** Incident telemetry, system logs, and proprietary code traces are sensitive. Serving the trained GGUF locally ensures this data never leaves the host machine.
+2. **FinOps Efficiency:** At $0.012 per incident compared to expensive per-token API calls, local inference aligns directly with the project's FinOps optimization goal.
+3. **What You Actually See:** When you run `inference.py`, the backend queries the local OpenAI-compatible server that is serving the downloaded trained GGUF. The dashboard shows real-time multi-agent reasoning, live sandbox telemetry, Docker validator results, and deterministic cost receipts, proving the GRPO-trained policy is being used locally.
+
 ---
 
 ## Hackathon Compliance Checklist
@@ -800,7 +817,7 @@ cd frontend && npm run dev
 python inference.py
 ```
 
-The frontend opens at `http://localhost:5173`. Click "Start inference.py" to begin the simulation — it works identically to the HF Space version.
+The frontend opens at `http://localhost:5173`. Click "Run inference.py" to begin the OpenEnv inference run — it works identically to the HF Space version.
 
 ### Deploying to a Hugging Face Space (cloud parity with the local stack)
 
@@ -834,7 +851,7 @@ Configure these in **Space → Settings → Repository secrets**:
 | Secret | Example | Purpose |
 |---|---|---|
 | `HF_TOKEN` | `hf_xxx...` | Read access to your model repo for the GGUF download in `start.sh`. |
-| `MODEL_REPO_ID` | `aryan-gupta-2010/meta_hackthon_2010_2026` | HF model repo that holds the trained GGUF. |
+| `MODEL_REPO_ID` | `aryxn323/meta_hackthon_2010_2026` | HF model repo that holds the trained GGUF. |
 | `MODEL_FILENAME` | `Llama-3.1-8B-Instruct.Q4_K_M.gguf` | The GGUF artifact name inside that repo. |
 | `LLM_PROVIDER` | `local` | Forces `inference.py` to use the OpenAI-compatible client at `LOCAL_OPENAI_BASE_URL`. |
 | `LOCAL_OPENAI_API_KEY` | `lm-studio` | Placeholder — `llama-cpp-python` ignores it but the OpenAI SDK requires a non-empty value. |
@@ -999,7 +1016,7 @@ swarm-os/
 │       └── orchestrator.py               # Multi-agent spawning and VRAM gating
 ├── frontend/                             # React dashboard
 │   ├── src/
-│   │   ├── App.jsx                       # Main layout + Start inference.py overlay
+│   │   ├── App.jsx                       # Main layout + Run inference.py overlay
 │   │   ├── store/simulationStore.jsx     # Zustand state management
 │   │   ├── hooks/useSimulation.js        # WebSocket + orchestration hook
 │   │   └── components/
