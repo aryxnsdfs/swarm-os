@@ -117,7 +117,7 @@ export default function App() {
       <Header onClearReset={handleClearReset} />
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Full-screen overlay — Start Simulation */}
+      {/* Full-screen overlay — Start inference.py */}
       <AnimatePresence>
         {showOverlay && (
           <motion.div
@@ -151,7 +151,7 @@ export default function App() {
                 onClick={handleStartSimulation}
                 className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-base font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-500/40 hover:scale-[1.03] active:scale-[0.98]"
               >
-                Start Simulation
+                Start inference.py
               </button>
               <span className="text-[10px] text-zinc-500 font-mono">inference.py &middot; OpenEnv &middot; Docker Sandbox</span>
             </motion.div>
