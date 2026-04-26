@@ -183,7 +183,7 @@ To execute this transformation without access to enterprise A100 clusters, we en
 Constrained hardware environments are notoriously fragile. When the `trl` framework initiates, it aggressively scans the OS for enterprise telemetry tools (`weave`, `wandb`, `llm_blender`, `mergekit`). If these are missing or cannot connect to the internet, the framework crashes before training begins. We engineered a structural override — the **Holographic Interceptor**.
 
 ```python
-# CELL 1 — Run this FIRST, alone, before anything else
+# ═══ CELL 1 — Run this FIRST, alone, before anything else ═══
 import sys
 import types
 import importlib.util
@@ -228,7 +228,7 @@ for pkg in ['llm_blender', 'mergekit', 'mergekit.config',
 # Now safe to import unsloth BEFORE TRL touches anything
 import unsloth  # noqa — must be first
 
-print("Hologram active. Safe to run training cell.")
+print("✅ Hologram active. Safe to run training cell.")
 ```
 
 By intercepting the internal Python `find_spec` logic at the source **and** injecting ghost modules, we achieve double-layer protection. Crucially, this ensures `unsloth` hooks directly into the CUDA hardware drivers before any other library, granting a documented **2x training acceleration**.
