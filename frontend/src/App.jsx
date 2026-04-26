@@ -143,16 +143,7 @@ export default function App() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="relative z-10 flex flex-col items-center gap-4 px-8 py-7 rounded-2xl border border-zinc-700/50 bg-zinc-900/85 shadow-2xl w-[520px] max-w-[95vw] max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
             >
-              {/* Logo + title */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-                  <span className="text-white text-base font-bold">F</span>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-zinc-100 leading-tight">FrontierLabs Swarm-OS</h2>
-                  <p className="text-[10px] text-zinc-500 font-mono">GRPO-trained Llama-3.1-8B · OpenEnv · Docker Sandbox</p>
-                </div>
-              </div>
+
 
               {/* Story blurb */}
               <div className="w-full rounded-lg bg-zinc-800/50 border border-zinc-700/40 px-4 py-3 text-left space-y-1.5">
