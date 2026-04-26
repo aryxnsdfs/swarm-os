@@ -95,7 +95,7 @@ The model did not understand the constraints. It was not trained to. It was trai
 
 We started with `Llama-3.1-8B-Instruct` — an 8-billion parameter open-source model. On a standard benchmark, it is a capable, well-rounded model. In an infrastructure crisis under hard resource constraints, it defaults to exactly the kind of verbose, hardware-scaling suggestions described above.
 
-We ran it entirely locally on a Kaggle T4 GPU (16GB VRAM). No cloud API. No external inference costs. No data leaving the machine.
+We trained it on a T4 GPU in Google Colab.
 
 ### Why We Used GRPO Instead of Standard Fine-Tuning
 
