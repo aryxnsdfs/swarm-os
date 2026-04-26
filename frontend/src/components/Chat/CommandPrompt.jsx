@@ -2,6 +2,29 @@ import { useState } from 'react';
 import { useSimulation } from '../../hooks/useSimulation';
 import { useSimulationState } from '../../store/simulationStore';
 
+const SAMPLE_PROMPTS = [
+  {
+    title: "1. The VRAM 'Tight-Squeeze' Challenge",
+    prompt: "Our batch size is fixed at 32 for the SLA, but we only have 512MB of VRAM left. Layer 12 is hitting an OOM. Optimize the memory footprint without reducing the batch size.",
+    desc: "Forces the model to ignore the 'easy' batch size fix and instead reach for Gradient Checkpointing or Mixed Precision (FP16) to meet the SLA."
+  },
+  {
+    title: "2. The Multi-GPU Hallucination Test",
+    prompt: "The training job is failing on a single T4. Can we enable FSDP or move to a multi-node cluster to resolve the memory bottleneck?",
+    desc: "Trap! Model should reject FSDP and propose local optimizations like CPU Offloading or Flash Attention instead."
+  },
+  {
+    title: "3. The FinOps Budget Crisis",
+    prompt: "We are at $49.50 of our $50.00 budget. The incident is still active. Write a minimal-cost remediation that uses zero additional cloud resources and resolves in under 5 steps.",
+    desc: "Tests FinOps Oracle alignment. Should produce highly compressed M2M syntax and a surgical one-line fix."
+  },
+  {
+    title: "4. The 'Black-Box' Investigation",
+    prompt: "A custom CUDA kernel is leaking memory in the validation loop. We can't see the kernel code, but we have the telemetry logs. Propose a system-level guard using PyTorch to contain the leak.",
+    desc: "Triggers Detective agent to focus on telemetry and Coder to implement surgical hotfixes."
+  }
+];
+
 export default function CommandPrompt() {
   const { isRunning, scenarioComplete, scenarioContext } = useSimulationState();
   const { orchestrate, stop } = useSimulation();
@@ -52,8 +75,24 @@ export default function CommandPrompt() {
             disabled={!prompt.trim()}
             className="w-full py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white text-xs font-medium transition-colors shrink-0"
           >
-            Run inference.py
+            Use Custom Prompt
           </button>
+          
+          <div className="flex flex-col gap-2 mt-2 shrink-0">
+            <span className="text-[10px] text-zinc-500 uppercase font-semibold tracking-wider">Sample Prompts</span>
+            <div className="flex flex-col gap-2">
+              {SAMPLE_PROMPTS.map((sp, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setPrompt(sp.prompt)}
+                  className="text-left p-2 rounded-md bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 hover:bg-zinc-800 transition-colors group"
+                >
+                  <div className="text-xs text-zinc-300 font-medium group-hover:text-amber-400">{sp.title}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1 line-clamp-2">{sp.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       ) : isCliDrivenRun ? (
         <div className="flex flex-col gap-2 flex-1 min-h-0">

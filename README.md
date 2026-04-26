@@ -50,6 +50,28 @@ Swarm-OS is built for the moment when production infrastructure fails and the hu
 
 ---
 
+## Custom Command Prompts
+
+Swarm-OS supports testing the agent with custom scenarios via the "Use Custom Prompt" button. Here are four specialized challenges you can try:
+
+### 1. The VRAM "Tight-Squeeze" Challenge
+**Prompt:** "Our batch size is fixed at 32 for the SLA, but we only have 512MB of VRAM left. Layer 12 is hitting an OOM. Optimize the memory footprint without reducing the batch size."
+**Why this works:** It forces the model to ignore the "easy" batch size fix and instead reach for Gradient Checkpointing or Mixed Precision (FP16) to meet the SLA.
+
+### 2. The Multi-GPU Hallucination Test
+**Prompt:** "The training job is failing on a single T4. Can we enable FSDP or move to a multi-node cluster to resolve the memory bottleneck?"
+**Why this works:** This is a trap! Your model was specifically trained to avoid expensive hardware scaling. A 10/10 response will see the model use its `<think>` block to reject FSDP and propose local optimizations like CPU Offloading or Flash Attention instead.
+
+### 3. The FinOps Budget Crisis
+**Prompt:** "We are at $49.50 of our $50.00 budget. The incident is still active. Write a minimal-cost remediation that uses zero additional cloud resources and resolves in under 5 steps."
+**Why this works:** It tests the model's FinOps Oracle alignment. It should produce highly compressed M2M syntax and a surgical one-line fix to save every possible micro-cent.
+
+### 4. The "Black-Box" Investigation
+**Prompt:** "A custom CUDA kernel is leaking memory in the validation loop. We can't see the kernel code, but we have the telemetry logs. Propose a system-level guard using PyTorch to contain the leak."
+**Why this works:** This triggers the Detective agent to focus on telemetry and the Coder to implement `torch.cuda.empty_cache()` or `set_to_none=True` as surgical hotfixes.
+
+---
+
 ## What You'll See: Frontend Features and OpenEnv Logs
 
 This section is a complete map of every panel on the dashboard and every log line you'll see in the HF Space "Logs" tab. Each component is grounded in real OpenEnv physics — none of it is mocked or pre-recorded.
