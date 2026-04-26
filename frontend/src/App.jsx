@@ -181,19 +181,21 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                onClick={handleRunInference}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99]"
-              >
-                Start inference.py
-              </button>
-              
-              <button
-                onClick={() => setOverlayDismissed(true)}
-                className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold transition-all mt-1"
-              >
-                Use the custom prompt
-              </button>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={handleRunInference}
+                  className="flex-[1.6] py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  Start inference.py
+                </button>
+                
+                <button
+                  onClick={() => setOverlayDismissed(true)}
+                  className="flex-1 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-[10px] font-semibold transition-all"
+                >
+                  Use Custom Prompt
+                </button>
+              </div>
 
               {/* Sample Custom Prompts */}
               <div className="w-full flex flex-col gap-1.5 text-left mt-2">
