@@ -260,7 +260,8 @@ export default function App() {
                   <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                     <DockerPhysicsMonitor />
                   </div>
-                  {!scenarioComplete && (
+                  {/* Hide sandbox during active run to focus on monitor/chat */}
+                  {!scenarioComplete && !isRunning && (
                     <div className="shrink-0 h-[200px] flex flex-col">
                       <CommandPrompt pendingPrompt={pendingPrompt} onPendingConsumed={() => setPendingPrompt("")} />
                     </div>

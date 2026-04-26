@@ -63,6 +63,7 @@ const initialState = {
   validatorRuntime: null,
   lastValidatorResult: null,
   taskViews: {},
+  queuedTaskIds: [],
   selectedTaskView: null,
   causalNodes: [],
   causalEdges: [],
@@ -501,13 +502,12 @@ function simulationReducer(state, action) {
     }
     case "QUEUE_TASKS": {
       const taskIds = action.payload;
-      let newTaskViews = { ...state.taskViews };
-      let newSelected = state.selectedTaskView;
-      if (taskIds.length > 0 && !newSelected) newSelected = taskIds;
+      // Fresh start: clear existing views and selection so we don't leak state from previous runs
       return {
         ...state,
-        taskViews: newTaskViews,
-        selectedTaskView: newSelected,
+        taskViews: {},
+        queuedTaskIds: taskIds || [],
+        selectedTaskView: null,
       };
     }
     case "SET_VALIDATOR_RESULT":

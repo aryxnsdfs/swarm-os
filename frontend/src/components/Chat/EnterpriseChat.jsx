@@ -6,7 +6,7 @@ import { ShieldAlert, Bot, Terminal, Briefcase, Users, Gauge } from 'lucide-reac
 
 export default function EnterpriseChat() {
   const dispatch = useSimulationDispatch();
-  const { messages, disagreement, scenarioContext, taskViews, selectedTaskView, scenarioComplete, spent, budget, burnRate, rewardFeed, totalReward } = useSimulationState();
+  const { messages, disagreement, scenarioContext, taskViews, queuedTaskIds, selectedTaskView, scenarioComplete, spent, budget, burnRate, rewardFeed, totalReward } = useSimulationState();
   const scrollRef = useRef(null);
   const [translateMode, setTranslateMode] = useState(false);
   const [expandedThink, setExpandedThink] = useState({});
@@ -16,11 +16,13 @@ export default function EnterpriseChat() {
     ...Object.keys(taskViews || {}),
     ...(activeTask ? [activeTask] : []),
   ]);
-  const showTaskSwitcher = availableTasks.size > 1;
+  
+  // Show task switcher if we have multiple tasks queued (sequence) or already started
+  const showTaskSwitcher = (queuedTaskIds && queuedTaskIds.length > 1) || availableTasks.size > 1;
   const taskButtons = [
-    { key: 'task_easy_gpu_oom', label: 'Easy' },
-    { key: 'task_medium_schema_drift', label: 'Medium' },
-    { key: 'task_hard_canary_regression', label: 'Hard' },
+    { key: 'task_easy_gpu_oom', label: 'EASY' },
+    { key: 'task_medium_schema_drift', label: 'MED' },
+    { key: 'task_hard_canary_regression', label: 'HARD' },
   ];
 
   useEffect(() => {
