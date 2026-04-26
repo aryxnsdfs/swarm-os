@@ -168,10 +168,28 @@ function simulationReducer(state, action) {
     }
     case "CONTINUE_OR_START": {
       if (state.isRunning) {
-        return persistCurrentTaskView(
-          { ...state, scenarioContext: action.payload, scenarioComplete: false },
-          action.payload?.task_id,
-        );
+        const prevTaskId = state.scenarioContext?.task_id;
+        const savedViews = { ...state.taskViews };
+        if (prevTaskId) savedViews[prevTaskId] = snapshotTaskState(state);
+        return {
+          ...state,
+          scenarioContext: action.payload,
+          scenarioComplete: false,
+          messages: [],
+          causalNodes: [],
+          causalEdges: [],
+          gitCommits: [],
+          rewardFeed: [],
+          totalReward: 0,
+          liveEpisode: 0,
+          rewardHistory: [{ episode: 0, reward: 0 }],
+          rcaDocument: null,
+          lastValidatorResult: null,
+          reasoningTrace: [],
+          activeAgents: [],
+          taskViews: savedViews,
+          selectedTaskView: action.payload?.task_id || state.selectedTaskView,
+        };
       }
       const preservedViews2 = { ...state.taskViews };
       const curTaskId2 = state.scenarioContext?.task_id;
