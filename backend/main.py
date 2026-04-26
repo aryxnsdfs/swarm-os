@@ -356,6 +356,7 @@ class ScenarioStartRequest(BaseModel):
 
 class OrchestrateRequest(BaseModel):
     prompt: str
+    custom_only: bool = False
 
 
 class AgentSpawnRequest(BaseModel):
@@ -1802,8 +1803,8 @@ async def dismiss_agent(req: AgentDismissRequest):
 async def orchestrate_scenario(req: OrchestrateRequest):
     """Zero-Click Orchestration: LLM parses intent and spins up sandbox."""
     prompt = _normalize_prompt_text(req.prompt)
-    logger.info("POST /api/orchestrate -> prompt='%s'", prompt)
-    print(f"\n[swarm-os] ▶ Simulation triggered — running all OpenEnv tasks", flush=True)
+    is_custom = req.custom_only
+    logger.info("POST /api/orchestrate -> prompt='%s' custom_only=%s", prompt, is_custom)
 
     if OPENENV_FRONTEND_BRIDGE:
         clients = create_clients()
@@ -1817,6 +1818,56 @@ async def orchestrate_scenario(req: OrchestrateRequest):
                 ),
             }
 
+        if is_custom:
+            # Custom prompt mode: pick the single best-matching task for the user's prompt
+            incident_type = _detect_incident_type(prompt)
+            if incident_type == "schema":
+                resolved_task_id = "task_medium_schema_drift"
+            elif incident_type == "oom":
+                resolved_task_id = "task_easy_gpu_oom"
+            else:
+                resolved_task_id = "task_easy_gpu_oom"  # default fallback
+
+            task = get_task(resolved_task_id)
+            # Use the user's actual prompt as the mission, not the task's built-in prompt
+            mission_prompt = prompt
+            validator_preview = _preview_validator_runtime(resolved_task_id)
+            incident_type_label = (
+                "schema" if "schema" in resolved_task_id
+                else "canary" if "canary" in resolved_task_id
+                else "oom"
+            )
+            commander_payload = {
+                "task_id": resolved_task_id,
+                "title": f"Custom: {prompt[:60]}{'...' if len(prompt) > 60 else ''}",
+                "objective": prompt,
+                "incident_type": incident_type_label,
+                "validator_runtime": validator_preview,
+                "provider": detect_provider() or "none",
+                "provider_chain": available_provider_names(),
+                "model": MODEL_NAME,
+                "custom_prompt": True,
+            }
+            print(f"\n[swarm-os] \u25b6 Custom prompt triggered — single task mode ({resolved_task_id})", flush=True)
+            await broadcast({"type": "tasks_queued", "payload": {"task_ids": [resolved_task_id]}})
+
+            await _stop_scenario_task()
+            await _stop_training_loop()
+            global scenario_task
+            scenario_task = asyncio.create_task(
+                _run_openenv_frontend_scenario(
+                    prompt=prompt,
+                    resolved_task_id=resolved_task_id,
+                    mission_prompt=mission_prompt,
+                    commander_payload=commander_payload,
+                    skip_reset=False,
+                    is_final_task=True,
+                )
+            )
+            return {"status": "orchestrated", "mode": "openenv_custom", "commander_payload": commander_payload}
+
+        # Default mode: run all 3 tasks sequentially
+        print(f"\n[swarm-os] \u25b6 Simulation triggered \u2014 running all OpenEnv tasks", flush=True)
         all_task_ids = [
             "task_easy_gpu_oom",
             "task_medium_schema_drift",
@@ -1841,7 +1892,6 @@ async def orchestrate_scenario(req: OrchestrateRequest):
 
         await _stop_scenario_task()
         await _stop_training_loop()
-        global scenario_task
         scenario_task = asyncio.create_task(
             _run_all_openenv_tasks(
                 prompt=prompt,

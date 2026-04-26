@@ -41,7 +41,7 @@ export default function CommandPrompt({ pendingPrompt, onPendingConsumed }) {
 
   const handleSubmit = () => {
     if (prompt.trim() && !isRunning && !isCliDrivenRun) {
-      orchestrate(prompt);
+      orchestrate(prompt, { customOnly: true });
     }
   };
 

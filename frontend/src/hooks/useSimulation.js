@@ -95,7 +95,7 @@ export function useSimulation() {
     }
   }, []);
 
-  const orchestrate = useCallback((prompt) => {
+  const orchestrate = useCallback((prompt, { customOnly = false } = {}) => {
     clearAllTimers();
     const cleanPrompt = normalizePromptText(prompt);
 
@@ -108,7 +108,9 @@ export function useSimulation() {
         id: Date.now().toString(),
         agent: 'MANAGER',
         m2m: `[ORCHESTRATION_REQUEST] Parse intent: "${cleanPrompt}"`,
-        think: 'Sending prompt to the orchestrator so it can select the OpenEnv task, validator mode, and live evidence path.',
+        think: customOnly
+          ? 'Running custom prompt against a single OpenEnv task.'
+          : 'Sending prompt to the orchestrator so it can select the OpenEnv task, validator mode, and live evidence path.',
         timestamp: new Date().toISOString()
       }
     });
@@ -116,7 +118,7 @@ export function useSimulation() {
     fetch(`${apiBase}/api/orchestrate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: cleanPrompt })
+      body: JSON.stringify({ prompt: cleanPrompt, custom_only: customOnly })
     })
     .then(res => res.json())
     .then(data => {
