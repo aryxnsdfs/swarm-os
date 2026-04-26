@@ -897,7 +897,7 @@ python inference.py
 ### Reproducing the Training (Kaggle T4)
 
 ```bash
-# Open the Colab Training Script: https://colab.research.google.com/drive/15XLbHBzBZJCZIqS_8PqZDFSuhUmOe1bv?usp=sharing
+# Open the Colab Training Script: https://colab.research.google.com/drive/1iPbU5HVCGfyxXiYtaTo8ZsybMq0i-_kK?usp=sharing
 # Hardware: Kaggle T4 16GB GPU (~8h 54min runtime)
 
 # Pipeline execution order:

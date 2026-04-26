@@ -2534,7 +2534,8 @@ def _build_openenv_rca(task, observation, success: bool, steps_taken: int) -> st
         rca += "| Artifact | Finding |\n"
         rca += "|---|---|\n"
         for artifact, detail in findings.items():
-            rca += f"| {artifact} | {str(detail).strip()[:150]} |\n"
+            safe_detail = str(detail).strip()[:150].replace("|", "·")
+            rca += f"| {artifact} | {safe_detail} |\n"
         rca += "\n"
 
     if logs:
@@ -2542,7 +2543,8 @@ def _build_openenv_rca(task, observation, success: bool, steps_taken: int) -> st
         rca += "| # | Log Entry |\n"
         rca += "|---|---|\n"
         for i, line in enumerate(logs[-8:], 1):
-            rca += f"| {i} | {str(line).strip()[:120]} |\n"
+            safe_line = str(line).strip()[:150].replace("|", "·")
+            rca += f"| {i} | {safe_line} |\n"
         rca += "\n"
 
     rca += "## Validation Proof\n\n"
@@ -2551,7 +2553,7 @@ def _build_openenv_rca(task, observation, success: bool, steps_taken: int) -> st
     rca += f"| **Validator Mode** | {validator_mode} |\n"
     rca += f"| **Status** | {validator_status} |\n"
     rca += f"| **Checks Applied** | {checks_applied} |\n"
-    rca += f"| **Validator Detail** | {validator_line[:120]} |\n"
+    rca += f"| **Validator Detail** | {validator_line[:120].replace('|', '·')} |\n"
     if checklist:
         for item in checklist:
             rca += f"| **Residual Risk** | {item} |\n"

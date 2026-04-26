@@ -493,7 +493,7 @@ This architecture means Swarm-OS can coordinate an investigation that looks like
 | Requirement | Status | Evidence |
 |---|---|---|
 | OpenEnv (latest release) | PASS | Built on OpenEnv 0.2.3, implements `MCPEnvironment` and `Rubric` base classes |
-| Working training script (Unsloth / TRL) | PASS | [Colab notebook](https://colab.research.google.com/drive/15XLbHBzBZJCZIqS_8PqZDFSuhUmOe1bv?usp=sharing) — runs end-to-end on Kaggle T4 |
+| Working training script (Unsloth / TRL) | PASS | [Colab notebook](https://colab.research.google.com/drive/1iPbU5HVCGfyxXiYtaTo8ZsybMq0i-_kK?usp=sharing) — runs end-to-end on Kaggle T4 |
 | Evidence of training (loss + reward plots) | PASS | Figures 1 and 2 embedded above; `reward_log.jsonl` and `training_summary.json` in repository |
 | Mini-blog or 2-min video | PASS | This blog post |
 | Environment hosted on HuggingFace Spaces | PASS | HF Space URL in submission resources |

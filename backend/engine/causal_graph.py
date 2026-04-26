@@ -126,7 +126,7 @@ class CausalGraphEngine:
             t = re.sub(r"\s+", " ", t.replace("\n", " ")).strip()
             if "import torch" in t or "def " in t or "class " in t:
                 t = "Executable remediation content recorded."
-            return t[:120]
+            return t[:120].replace("|", "·")
 
         rca = "# Auto-Generated Root Cause Analysis\n\n"
 
