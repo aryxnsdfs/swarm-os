@@ -59,17 +59,39 @@ from swarm_openenv_env.tasks import get_task
 
 # -- Logging Configuration --
 import sys
+
+_LOG_FMT = "%(asctime)s | %(levelname)-7s | %(name)-20s | %(message)s"
+_LOG_DATE = "%Y-%m-%d %H:%M:%S"
+
+# Primary handler: stderr → container stdout (HF Space Container tab sees this in real time)
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)-7s | %(name)-20s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    format=_LOG_FMT,
+    datefmt=_LOG_DATE,
     stream=sys.stderr,
     force=True,
 )
 logger = logging.getLogger("swarm-os.main")
-print(f"[swarm-os] Backend module loaded — PID={os.getpid()}", flush=True)
+
 SWARM_LOG_FILE = Path(os.getenv("SWARM_LOG_FILE", "/data/swarm-os-container.log"))
 LLAMA_LOG_FILE = Path("/tmp/llama_cpp_server.log")
+
+# Secondary handler: also mirror every log line to the persistent log file on
+# /data (survives restarts) — replaces the old shell-level tee trick which
+# buffered in Docker and caused the HF Space Container tab to show "No logs".
+try:
+    SWARM_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _file_handler = logging.FileHandler(SWARM_LOG_FILE, mode="a", encoding="utf-8")
+    _file_handler.setLevel(logging.INFO)
+    _file_handler.setFormatter(logging.Formatter(fmt=_LOG_FMT, datefmt=_LOG_DATE))
+    # Force flush after every record so lines appear immediately in /data log
+    _file_handler.stream.reconfigure(line_buffering=True) if hasattr(_file_handler.stream, "reconfigure") else None
+    logging.getLogger().addHandler(_file_handler)
+except Exception:
+    pass  # Non-fatal: /data might not exist in local dev
+
+print(f"[swarm-os] Backend module loaded — PID={os.getpid()}", flush=True)
+print(f"[swarm-os] Log file: {SWARM_LOG_FILE}", flush=True)
 
 # ════════════════════════════════════════════════════════════════════
 # 🎛️  DEMO MODE TOGGLE — Change this ONE variable before your pitch
