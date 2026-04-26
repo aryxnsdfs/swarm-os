@@ -58,40 +58,77 @@ from swarm_openenv_env.tasks import get_task
 
 
 # -- Logging Configuration --
+# Force line buffering on stdout/stderr so every log line is flushed
+# immediately. Combined with the PTY allocated by `script` in start.sh, this
+# is what makes the HF Space Container tab show live logs.
 import sys
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(line_buffering=True)
+    except Exception:
+        pass
 
 _LOG_FMT = "%(asctime)s | %(levelname)-7s | %(name)-20s | %(message)s"
 _LOG_DATE = "%Y-%m-%d %H:%M:%S"
 
-# Primary handler: stderr → container stdout (HF Space Container tab sees this in real time)
-logging.basicConfig(
-    level=logging.INFO,
-    format=_LOG_FMT,
-    datefmt=_LOG_DATE,
-    stream=sys.stderr,
-    force=True,
-)
+
+class _FlushingStreamHandler(logging.StreamHandler):
+    """StreamHandler that flushes after every record — guarantees the line
+    reaches Docker's log driver immediately even if libc buffering kicks in."""
+
+    def emit(self, record):
+        super().emit(record)
+        try:
+            self.flush()
+        except Exception:
+            pass
+
+
+# Primary handler: write to STDOUT (most Docker daemons capture stdout most
+# reliably for `docker logs`/HF Space Container tab). We also mirror to a
+# persistent file on /data so the /logs endpoint always works as a fallback.
+_root_logger = logging.getLogger()
+_root_logger.handlers.clear()
+_root_logger.setLevel(logging.INFO)
+
+_stdout_handler = _FlushingStreamHandler(stream=sys.stdout)
+_stdout_handler.setLevel(logging.INFO)
+_stdout_handler.setFormatter(logging.Formatter(fmt=_LOG_FMT, datefmt=_LOG_DATE))
+_root_logger.addHandler(_stdout_handler)
+
 logger = logging.getLogger("swarm-os.main")
 
 SWARM_LOG_FILE = Path(os.getenv("SWARM_LOG_FILE", "/data/swarm-os-container.log"))
 LLAMA_LOG_FILE = Path("/tmp/llama_cpp_server.log")
 
-# Secondary handler: also mirror every log line to the persistent log file on
-# /data (survives restarts) — replaces the old shell-level tee trick which
-# buffered in Docker and caused the HF Space Container tab to show "No logs".
+# Secondary handler: persistent log file on /data, survives restarts and feeds
+# the /logs HTTP endpoint as a fallback when HF Space Container tab is blank.
 try:
     SWARM_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     _file_handler = logging.FileHandler(SWARM_LOG_FILE, mode="a", encoding="utf-8")
     _file_handler.setLevel(logging.INFO)
     _file_handler.setFormatter(logging.Formatter(fmt=_LOG_FMT, datefmt=_LOG_DATE))
-    # Force flush after every record so lines appear immediately in /data log
-    _file_handler.stream.reconfigure(line_buffering=True) if hasattr(_file_handler.stream, "reconfigure") else None
-    logging.getLogger().addHandler(_file_handler)
+    if hasattr(_file_handler.stream, "reconfigure"):
+        try:
+            _file_handler.stream.reconfigure(line_buffering=True)
+        except Exception:
+            pass
+    _root_logger.addHandler(_file_handler)
 except Exception:
     pass  # Non-fatal: /data might not exist in local dev
 
+# Make uvicorn's loggers use the same handlers so access logs and errors flow
+# through the flushing stdout handler too (otherwise uvicorn installs its own
+# stderr handler that may buffer differently).
+for _name in ("uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"):
+    _lg = logging.getLogger(_name)
+    _lg.handlers.clear()
+    _lg.propagate = True
+    _lg.setLevel(logging.INFO)
+
 print(f"[swarm-os] Backend module loaded — PID={os.getpid()}", flush=True)
 print(f"[swarm-os] Log file: {SWARM_LOG_FILE}", flush=True)
+print(f"[swarm-os] sys.stdout.isatty()={sys.stdout.isatty()}  PYTHONUNBUFFERED={os.environ.get('PYTHONUNBUFFERED', '')}", flush=True)
 
 # ════════════════════════════════════════════════════════════════════
 # 🎛️  DEMO MODE TOGGLE — Change this ONE variable before your pitch

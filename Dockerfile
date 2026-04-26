@@ -36,11 +36,18 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LOCAL_OPENAI_API_KEY=lm-studio \
     LLM_PROVIDER=local
 
-# System deps: python3.11 + pip + curl (for start.sh readiness probe)
-# libgomp1 is required by llama-cpp-python (OpenMP runtime)
+# System deps:
+#   python3.11 + pip       application runtime
+#   curl + ca-certificates start.sh readiness probe
+#   libgomp1               OpenMP runtime required by llama-cpp-python
+#   bsdmainutils           provides `script` (PTY allocator) — REQUIRED to
+#                          defeat docker stdout buffering so HF Space's
+#                          Container tab shows live logs in real time
+#   coreutils              ships `stdbuf` for line-buffered subprocess output
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3.11 python3-pip \
         curl ca-certificates libgomp1 \
+        bsdmainutils coreutils \
     && ln -sf /usr/bin/python3.11 /usr/bin/python \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && rm -rf /var/lib/apt/lists/*
