@@ -5,7 +5,7 @@ entrypoint: "swarm_openenv_env.environment:IncidentResponseEnv"
 
 metadata:
   primary_model: "Meta-Llama-3.1-8B-Instruct"
-  local_model_path: "models/aryan-gupta-2010/meta_hackthon_2010_2026/Llama-3.1-8B-Instruct.Q4_K_M.gguf"
+  local_model_path: "/data/models/Llama-3.1-8B-Instruct.Q4_K_M.gguf"
   
   agent_architecture:
     description: "A multi-agent Swarm-OS architecture where specialized agents collaborate to resolve production incidents."
